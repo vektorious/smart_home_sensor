@@ -1,0 +1,132 @@
+# ============================================================================
+#  Smart Home Sensor — ESPHome variant (ALTERNATIVE build)
+#
+#  This is the alternative firmware to the Arduino sketch in ../shs_modular/.
+#  It exposes the same BME680 / BSEC2 metrics to Home Assistant, but uses
+#  ESPHome's native API (auto-discovered by HA — no MQTT broker required).
+#
+#  Trade-off: ESPHome is the simplest path for students and the most idiomatic
+#  for Home Assistant, but it does NOT reproduce the custom ST7789 dashboard UI
+#  from the Arduino build 1:1. A minimal display block is provided below; the
+#  rich coloured layout lives only in the Arduino variant.
+#
+#  Usage (Home Assistant ESPHome add-on or `esphome run`):
+#    1. Copy this file into your ESPHome config directory.
+#    2. Create a `secrets.yaml` with: wifi_ssid, wifi_password, ap_password.
+#    3. Install / flash, then accept the device HA auto-discovers.
+#
+#  Board: Waveshare ESP32-C6-LCD-1.3  (ESP32-C6, Arduino framework)
+# ============================================================================
+esphome:
+  name: smart-home-sensor
+  friendly_name: Smart Home Sensor
+
+esp32:
+  board: esp32-c6-devkitc-1
+  variant: esp32c6
+  framework:
+    type: arduino   # bme680_bsec2 requires the Arduino framework
+
+logger:
+
+# Native Home Assistant API — HA auto-discovers this device (no MQTT broker).
+api:
+
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # Captive-portal fallback if the saved network is unreachable.
+  ap:
+    ssid: "Smart-Home-Sensor-Setup"
+    password: !secret ap_password
+
+captive_portal:
+
+# ---------------------------------------------------------------------------
+#  BME680 over I2C  (SDA=GPIO3, SCL=GPIO2 — avoid GPIO16/17 = UART0)
+# ---------------------------------------------------------------------------
+i2c:
+  sda: GPIO3
+  scl: GPIO2
+  scan: true
+
+# BSEC2 air-quality processing. The component downloads the BSEC2 library and
+# applies its own calibration; the state is persisted to flash automatically.
+bme680_bsec2:
+  address: 0x76          # 0x77 on some modules — check the i2c scan in the log
+  # Indoor air-quality use; "lp" = low power (3 s) sample rate.
+  sample_rate: lp
+  # Self-heating compensation — equivalent to TEMP_OFFSET_C in the Arduino build.
+  # Calibrate: run ~20-30 min, then set to (reported - real thermometer).
+  temperature_offset: 5.0
+
+sensor:
+  - platform: bme680_bsec2
+    temperature:
+      name: "Temperature"
+      id: temperature
+    humidity:
+      name: "Humidity"
+      id: humidity
+    pressure:
+      name: "Pressure"
+    iaq:
+      name: "IAQ"
+      id: iaq
+    co2_equivalent:
+      name: "CO2 equivalent"
+      id: co2
+    breath_voc_equivalent:
+      name: "Breath VOC equivalent"
+
+text_sensor:
+  - platform: bme680_bsec2
+    iaq_accuracy:
+      name: "IAQ Accuracy"
+
+# ---------------------------------------------------------------------------
+#  Optional minimal display (ST7789 240x240 over SPI).
+#  Shows the headline values; not a 1:1 copy of the Arduino UI. Remove this
+#  whole block if you do not want a display.
+# ---------------------------------------------------------------------------
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO6
+
+output:
+  - platform: gpio
+    pin: GPIO22
+    id: backlight
+light:
+  - platform: binary
+    name: "Display Backlight"
+    output: backlight
+    restore_mode: ALWAYS_ON
+
+display:
+  - platform: st7789v
+    model: Custom
+    height: 240
+    width: 240
+    offset_height: 0
+    offset_width: 0
+    cs_pin: GPIO14
+    dc_pin: GPIO15
+    reset_pin: GPIO21
+    rotation: 270
+    update_interval: 5s
+    lambda: |-
+      it.printf(10, 6,   id(roboto), "Smart Home Sensor");
+      it.printf(10, 40,  id(roboto), "IAQ:  %.0f",     id(iaq).state);
+      it.printf(10, 70,  id(roboto), "CO2:  %.0f ppm", id(co2).state);
+      it.printf(10, 100, id(roboto), "Temp: %.1f C",   id(temperature).state);
+      it.printf(10, 130, id(roboto), "Hum:  %.1f %%",  id(humidity).state);
+
+# A font is required for display:. Provide any TTF in your ESPHome config dir.
+font:
+  - file: "gfonts://Roboto"
+    id: roboto
+    size: 20

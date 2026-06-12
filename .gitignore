@@ -1,0 +1,16 @@
+.obsidian
+.tmp/
+
+# Arduino build artifacts
+build/
+*.bin
+*.elf
+
+# R history
+.Rhistory
+
+# OS cruft
+.DS_Store
+
+# local Claude Code settings
+.claude/settings.local.json
