@@ -1,16 +1,22 @@
-# 3D-Printed Parts
+# 3D-Printed Enclosure
 
-> 🚧 **Work in progress.** No enclosure has been designed yet — this folder is a placeholder.
-> See [`../../TODO.md`](../../TODO.md).
+An enclosure for the Waveshare ESP32-C6-LCD-1.3 + BME680 that keeps the display visible,
+gives the BME680 airflow while shielding it from the warm side of the board, and routes the
+USB-C cable for permanent powered operation.
 
-## Planned
+## Parts
 
-An enclosure for the Waveshare ESP32-C6-LCD-1.3 + BME680 that:
-- keeps the **display** visible at a glance,
-- gives the **BME680** airflow while shielding it from the warm side of the board (self-heating
-  skews the temperature/humidity readings — see
-  [`../../instructions/background_information.md`](../../instructions/background_information.md)),
-- routes the **USB-C** cable for permanent powered operation.
+| File | Description |
+|------|-------------|
+| `SmartHomeCube-Main.3mf` | Main body — cubic version |
+| `SmartHomeCube-Main_thin.3mf` | Main body — thin version (5 mm shorter than cubic) |
+| `SmartHomeCube-Lid.3mf` | Lid |
+| `SmartHomeCube-Lid_w_offset.3mf` | Lid with additional offset |
 
-When designed, drop the printable files here (`.stl` / `.3mf`) with a short print-settings note,
-and editable sources in a `src/` subfolder.
+Print with standard PLA settings; no supports needed.
+
+## Modifying the fit
+
+The FreeCAD source is in `src/SmartHomeCube.FCStd`. All clearances and offsets are exposed in
+the **Variable set** (`Model → Variable set`) so you can adjust them for a tight fit without
+touching the geometry directly.

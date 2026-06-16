@@ -27,6 +27,7 @@ Do the wiring (§1–3) first; then pick **one** firmware path.
 
 **Optional**
 - 3D-printed enclosure (see [`hardware/3d-print/`](../hardware/3d-print/))
+- Styrofoam packing insert from the ESP32 box — keep it, it's used as a heat barrier in §3
 
 **Tools**
 - A computer with a USB-C port
@@ -58,10 +59,21 @@ have something to grip.
 
 ## 3. Assemble the Enclosure (optional)
 
-If you printed an enclosure, mount the board so the display is visible and the BME680 has
-airflow but is shielded from the warm side of the board (see the self-heating note in
-[`background_information.md`](background_information.md)). Enclosure parts are a work in
-progress — see [`hardware/3d-print/`](../hardware/3d-print/).
+If you printed an enclosure, follow these steps. The enclosure isolates the BME680 from heat
+radiated by the LCD backlight and ESP32, which would otherwise skew temperature and humidity
+readings (see [`background_information.md`](background_information.md) for details).
+
+> **Before you start:** keep the small piece of **styrofoam** the ESP32 board ships with.
+> It goes between the board and the BME680 as a heat barrier.
+
+1. **Push the ESP32 board into the main body** — display facing the open front.
+2. **Place the styrofoam piece** on top of the board, between the board and the BME680.
+   The foam reduces heat transfer from the LCD/chip to the sensor.
+3. **Position the BME680** on top of the styrofoam so it sits just under the lid opening.
+4. **Close with the lid** — the BME680 should end up directly beneath the lid, exposed to
+   room air rather than heat from the board.
+
+Enclosure files and FreeCAD source: [`hardware/3d-print/`](../hardware/3d-print/).
 
 ---
 

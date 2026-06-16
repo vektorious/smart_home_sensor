@@ -29,16 +29,6 @@ from the maintainer — they couldn't be completed during the initial scaffoldin
 - [ ] Photo of the display showing live readings.
 - [ ] Screenshot of the device + entities in Home Assistant (MQTT device card).
 
-## Hardware
-- [ ] Design and export a **3D-printed enclosure** into `hardware/3d-print/` (display visible,
-      BME680 airflow + heat shielding, USB-C routing). Folder currently holds only a README.
-
 ## Documentation polish
-- [ ] Generate `instructions/quick_reference/quick_reference.{html,pdf}` from the markdown (the
-      Smart Plants repo renders these for printing).
 - [ ] Add an example **Home Assistant automation** (e.g. notify when CO₂-eq > 1000 ppm) once the
       entity names are confirmed on hardware.
-
-## Decisions
-- [ ] Decide whether to pursue **OSHWA open-hardware certification** (the Smart Plants project
-      has one; omitted here for now — and there's no custom PCB).

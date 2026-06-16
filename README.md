@@ -112,12 +112,12 @@ code/
     test_wv_display/       Original display+sensor sketch (no networking, reference)
 
 hardware/
-  3d-print/                Enclosure parts (TODO)
+  3d-print/                Enclosure parts (Main/thin body, lid, FreeCAD source)
 
 instructions/
   build_instructions.md    Main build guide — start here
   background_information.md Sensor theory, IAQ explained, MQTT vs ESPHome, system overview
-  quick_reference/         Printable one-page summary
+  quick_reference/         One-page summary
 
 img/                       Photos and diagrams (TODO)
 ```

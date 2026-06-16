@@ -97,5 +97,5 @@ and fires `newDataCallback`, which fills a `SensorPacket` and calls `displayUpda
 
 - `instructions/build_instructions.md` — student-facing build guide (start here).
 - `instructions/background_information.md` — BME680/BSEC/IAQ theory, MQTT-vs-ESPHome, system path.
-- `instructions/quick_reference/quick_reference.md` — printable one-pager (HTML/PDF: TODO).
+- `instructions/quick_reference/quick_reference.md` — printable one-pager.
 - `TODO.md` — outstanding items (photos, enclosure, on-hardware verification, MQTT defaults).

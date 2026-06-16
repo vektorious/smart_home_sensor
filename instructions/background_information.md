@@ -168,10 +168,12 @@ is offered as a fast, low-friction alternative.
 
 ## Similar Projects
 
-### AirGradient
-Open-source, open-hardware indoor air-quality monitors (CO₂, PM2.5, temperature, humidity) with
-a strong Home Assistant / ESPHome story. A good reference for a more complete air monitor.
-https://www.airgradient.com/
+### Airrohr / sensor.community
+A European citizen-science project for DIY outdoor particulate-matter (PM2.5/PM10) sensors,
+originally from Stuttgart (luftdaten.info). Uses an ESP8266 + SDS011 laser dust sensor and
+uploads readings to a public map. A good reference for how a grassroots network of DIY sensors
+can produce city-scale air-quality data.
+https://sensor.community/en/sensors/airrohr/
 
 ### ESPHome BME680 via BSEC
 The official ESPHome component used by the alternative build — documents every option the
