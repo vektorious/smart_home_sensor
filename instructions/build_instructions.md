@@ -99,6 +99,8 @@ Enclosure files and FreeCAD source: [`hardware/3d-print/`](../hardware/3d-print/
 3. Open **Tools ▸ Board ▸ Boards Manager**, search for `esp32`, and install
    **esp32 by Espressif Systems**.
 4. Select **Tools ▸ Board ▸ ESP32 Arduino ▸ ESP32C6 Dev Module**.
+5. Set **Tools ▸ USB CDC On Boot ▸ Enabled**. The ESP32-C6 uses native USB — without this
+   the Serial Monitor won't receive output during boot and the port may not appear reliably.
 
 ### 4.2 Install Required Libraries
 
@@ -118,13 +120,24 @@ Bosch's `BSEC2` library ships precompiled algorithm blobs for several chips but,
 v1.10.x, **not for the ESP32-C6**. The C6 is soft-float RISC-V (`rv32imac`) and is
 ABI-compatible with the ESP32-C3 blob, so you create the C6 folder as a copy of the C3 one.
 
-In your Arduino libraries folder (usually `~/Arduino/libraries/BSEC2_Software_Library/src/`):
+Find your Arduino libraries folder for your OS, then run the commands below.
 
+**Linux** — `~/Arduino/libraries/`
 ```bash
-cd ~/Arduino/libraries/BSEC2_Software_Library/src
+cd ~/Arduino/libraries/bsec2/src
 mkdir -p esp32c6
 cp esp32c3/libalgobsec.a esp32c6/libalgobsec.a
 ```
+
+**macOS** — `~/Documents/Arduino/libraries/`
+```bash
+cd ~/Documents/Arduino/libraries/bsec2/src
+mkdir -p esp32c6
+cp esp32c3/libalgobsec.a esp32c6/libalgobsec.a
+```
+
+**Windows** — open `%USERPROFILE%\Documents\Arduino\libraries\bsec2\src\` in File Explorer,
+create a folder named `esp32c6`, and copy `libalgobsec.a` from `esp32c3\` into it.
 
 > If you ever get a **linker error** about `libalgobsec` after updating the library, the
 > update removed the `esp32c6/` folder — just re-run the copy above.
