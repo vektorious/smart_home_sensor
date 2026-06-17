@@ -207,6 +207,11 @@ actually mean.
 
 ## 7. Alternative — ESPHome
 
+> ⚠️ **This path has not been tested on real hardware.** The YAML is provided as a starting
+> point; pin assignments, `bme680_bsec2` platform support, and the ST7789 display block have
+> not been verified against a physical board. Use it at your own risk and expect some trial
+> and error.
+
 Prefer ESPHome? It needs no Arduino IDE and no MQTT broker — Home Assistant discovers the
 device over ESPHome's native API.
 

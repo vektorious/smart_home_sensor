@@ -67,8 +67,8 @@ firmware variants below.
 - Understand what **IAQ**, **CO₂-equivalent**, and **VOC** actually mean, and why a gas sensor
   needs a multi-day self-calibration window
 - Drive a colour SPI display and design a readable at-a-glance UI
-- Connect a DIY device to Home Assistant two different ways — **MQTT auto-discovery** and the
-  **ESPHome native API** — and understand the trade-offs
+- Connect a DIY device to Home Assistant via **MQTT auto-discovery** and understand how
+  ESPHome's native API offers an alternative approach
 
 ---
 
@@ -79,7 +79,7 @@ Two firmwares are provided. Both expose the same readings to Home Assistant.
 | Variant | Path | Integration | Who it's for |
 |---------|------|-------------|--------------|
 | **Main build** | [`code/shs_modular/`](code/shs_modular/) | Arduino + **MQTT** auto-discovery | Student workshops — keeps the custom display UI and teaches the full firmware path |
-| **Alternative** | [`code/esphome/`](code/esphome/) | **ESPHome** native API | Quickest path / no custom code; minimal display only |
+| **Alternative** _(untested)_ | [`code/esphome/`](code/esphome/) | **ESPHome** native API | Quickest path / no custom code; minimal display only — not verified on hardware |
 
 The main build is a modular Arduino sketch; every feature is toggled by a flag in
 [`code/shs_modular/config.h`](code/shs_modular/config.h):

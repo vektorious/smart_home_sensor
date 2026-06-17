@@ -27,7 +27,7 @@
 //  Leave USER/PASS empty ("") for an anonymous broker.
 // ---------------------------------------------------------------------------
 #define MQTT_TLS             0                // 1 = TLS/MQTTS, 0 = plain (local Mosquitto)
-#define MQTT_HOST            "192.168.1.x"   // broker IP or hostname
+#define MQTT_HOST            "172.22.1.149"   // broker IP or hostname
 #define MQTT_PORT            1883
 #define MQTT_USER            "mqtt-user"
 #define MQTT_PASS            "mqtt-password"
