@@ -4,12 +4,6 @@ Outstanding items to finish the workshop repository. Most need hardware, photos,
 from the maintainer — they couldn't be completed during the initial scaffolding.
 
 ## Verify on hardware
-- [ ] **Compile the Arduino main build** (`code/shs_modular/`) in the Arduino IDE with the
-      ESP32-C6 BSEC blob in place (see `build_instructions.md` §4.3). `arduino-cli` was not
-      available during scaffolding, so this has not been compile-checked.
-- [ ] **End-to-end MQTT test:** flash, confirm the device appears in Home Assistant via MQTT
-      discovery and all seven entities update (IAQ, IAQ Accuracy, CO₂-eq, VOC, temp, humidity,
-      pressure). Confirm the LWT marks it *offline* when powered down.
 - [ ] **Verify the ESPHome variant** (`code/esphome/smart_home_sensor.yaml`) on real hardware —
       especially the `bme680_bsec2` platform and the ST7789 `display:`/`spi:` pins. Confirm the
       `board:`/`variant:` values are accepted by the installed ESPHome version.
