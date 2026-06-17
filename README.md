@@ -98,7 +98,8 @@ Set `USE_MQTT` to `0` for a standalone display-only device (no network).
 ```
 code/
   shs_modular/             Main firmware (Arduino + BSEC2 + display + MQTT)
-    config.h               Feature flags, pins, device id, MQTT, calibration
+    config.example.h       Template — copy to config.h and fill in your credentials
+    config.h               Your local credentials (gitignored)
     shs_modular.ino        Entry point
     display.ino            ST7789 UI
     bme680.ino             BME680 read path via Bosch BSEC2

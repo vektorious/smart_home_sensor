@@ -29,6 +29,7 @@ void wifiConnect() {
 
   Serial.print("Wi-Fi connected: ");
   Serial.println(WiFi.localIP());
+  displaySetWifiStatus(true);
 }
 
 #else  // ---- USE_MQTT == 0 : no networking -------------------------------

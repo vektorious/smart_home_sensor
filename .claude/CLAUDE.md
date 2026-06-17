@@ -63,7 +63,8 @@ and fires `newDataCallback`, which fills a `SensorPacket` and calls `displayUpda
 
 | File | Responsibility |
 |------|----------------|
-| `config.h` | Flags, pins, device id, MQTT creds, calibration, `SensorPacket`, status colours |
+| `config.example.h` | Committed template with placeholder credentials — students copy this to `config.h` |
+| `config.h` | Gitignored local copy with real credentials; identical structure to `config.example.h` |
 | `shs_modular.ino` | Entry point; wires modules together |
 | `display.ino` | ST7789 UI; stubbed out when `USE_DISPLAY 0` |
 | `bme680.ino` | BSEC2 init, `newDataCallback`, NVS state persistence, error handling |

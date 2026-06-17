@@ -119,9 +119,11 @@ cp esp32c3/libalgobsec.a esp32c6/libalgobsec.a
 
 ### 4.4 Configure the Firmware
 
-1. Open `code/shs_modular/shs_modular.ino` in the Arduino IDE (it opens all the `.ino`
+1. In the `code/shs_modular/` folder, copy `config.example.h` to `config.h`
+   (the file is gitignored so your credentials stay out of the repository).
+2. Open `code/shs_modular/shs_modular.ino` in the Arduino IDE (it opens all the `.ino`
    modules as tabs).
-2. Open the **`config.h`** tab and set, near the top:
+3. Open the **`config.h`** tab and set, near the top:
 
 ```c
 #define DEVICE_NAME  "Smart Home Sensor"
@@ -133,7 +135,7 @@ cp esp32c3/libalgobsec.a esp32c6/libalgobsec.a
 #define MQTT_PASS    "mqtt-password"
 ```
 
-3. Leave `USE_DISPLAY` and `USE_MQTT` at `1`. (Set `USE_MQTT 0` if you only want the display.)
+4. Leave `USE_DISPLAY` and `USE_MQTT` at `1`. (Set `USE_MQTT 0` if you only want the display.)
 
 ### 4.5 Upload
 

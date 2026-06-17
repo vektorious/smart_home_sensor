@@ -1,6 +1,7 @@
 // ============================================================================
 //  Smart Home Sensor — central configuration
-//  Everything you need to change for your own build lives in this file.
+//  Copy this file to config.h and fill in your own values.
+//  config.h is gitignored so your credentials stay local.
 // ============================================================================
 #pragma once
 #include <Arduino.h>
@@ -18,14 +19,15 @@
 //  ("<DEVICE_NAME>-Setup"). DEVICE_ID must be unique per device — it keys the
 //  MQTT topics and the Home Assistant entity unique_ids.
 // ---------------------------------------------------------------------------
-#define DEVICE_NAME  "Smart Home Sensor"
+#define DEVICE_NAME  "SHS"              // keep short — title area is ~14 chars at textSize(2)
 #define DEVICE_ID    "shs-livingroom"      // a-z, 0-9, '-' only; unique per device
 
 // ---------------------------------------------------------------------------
 //  MQTT broker (e.g. the Mosquitto add-on in Home Assistant)
 //  Leave USER/PASS empty ("") for an anonymous broker.
 // ---------------------------------------------------------------------------
-#define MQTT_HOST            "192.168.1.10"   // broker IP or hostname
+#define MQTT_TLS             0                // 1 = TLS/MQTTS, 0 = plain (local Mosquitto)
+#define MQTT_HOST            "192.168.1.x"   // broker IP or hostname
 #define MQTT_PORT            1883
 #define MQTT_USER            "mqtt-user"
 #define MQTT_PASS            "mqtt-password"

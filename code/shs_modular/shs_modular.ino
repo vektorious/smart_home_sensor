@@ -17,6 +17,7 @@
 //  to src/esp32c6/ before building. See instructions/build_instructions.md §4.
 // ============================================================================
 #include "config.h"
+#include <bsec2.h>   // types must be visible before Arduino injects auto-generated prototypes
 
 void setup() {
   Serial.begin(115200);
@@ -41,6 +42,7 @@ void setup() {
 }
 
 void loop() {
-  bme680Run();   // samples when due (~3 s) and fires the data callback
-  mqttLoop();    // keeps the MQTT connection alive / reconnects
+  bme680Run();    // samples when due (~3 s) and fires the data callback
+  mqttLoop();     // keeps the MQTT connection alive / reconnects
+  displayTick();  // drives the WiFi blink animation
 }

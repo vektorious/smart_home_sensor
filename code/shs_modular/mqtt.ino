@@ -10,12 +10,17 @@
 
 #if USE_MQTT
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 
 #define TOPIC_STATE   "smart_home_sensor/" DEVICE_ID "/state"
 #define TOPIC_AVAIL   "smart_home_sensor/" DEVICE_ID "/status"
 
-static WiFiClient   wifiClient;
+#if MQTT_TLS
+static WiFiClientSecure wifiClient;
+#else
+static WiFiClient       wifiClient;
+#endif
 static PubSubClient mqtt(wifiClient);
 static uint32_t     lastPublish = 0;
 static bool         discoverySent = false;
@@ -91,14 +96,19 @@ static void mqttReconnect() {
     mqtt.publish(TOPIC_AVAIL, "online", /* retained */ true);
     publishDiscovery();
     discoverySent = true;
+    displaySetMqttStatus(true);
   } else {
     Serial.printf("failed (rc=%d)\n", mqtt.state());
+    displaySetMqttStatus(false);
   }
 }
 
 // ---- Public API -----------------------------------------------------------
 
 void mqttConnect() {
+#if MQTT_TLS
+  wifiClient.setInsecure();  // skip cert verification — broker is trusted
+#endif
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
   mqtt.setBufferSize(768);   // discovery payloads exceed the 256-byte default
   mqttReconnect();

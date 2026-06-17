@@ -1,6 +1,9 @@
 .obsidian
 .tmp/
 
+# Local credentials — copy config.example.h → config.h and fill in your values
+code/shs_modular/config.h
+
 # Arduino build artifacts
 build/
 *.bin

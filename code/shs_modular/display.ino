@@ -30,8 +30,9 @@ static Arduino_GFX *gfx = new Arduino_ST7789(
 #define ERR_COLOR   RGB565(0xEF, 0x47, 0x6F)
 
 // ---------- Display layout (240x240) ----------
-// Six value rows + a title and a status/accuracy footer. Labels are left-
-// aligned at LABEL_X; values are right-aligned to the screen edge.
+// Six value rows + a title/status header and a footer.
+// Labels are left-aligned at LABEL_X; values are right-aligned to the screen
+// edge. The top-right corner (x >= CONN_X) is reserved for WiFi + MQ icons.
 #define LABEL_X     10
 #define VAL_CLEAR_X 84      // value area (cleared + right-aligned) starts here
 #define ROW_IAQ     38
@@ -42,18 +43,72 @@ static Arduino_GFX *gfx = new Arduino_ST7789(
 #define ROW_PRES    188
 #define FOOTER_Y    216
 
+// Connection status area (top-right corner, x >= CONN_X)
+// Icon radius 14 matches textSize(2) height (16 px); cy=22 puts the top of the
+// icon at y=8, level with the device name.
+#define CONN_X      181     // left edge of WiFi + MQ area
+#define WIFI_CX     196     // WiFi icon centre x
+#define WIFI_CY      22     // WiFi icon centre y (dot); arcs open upward
+#define MQ_X        213     // "MQ" label x (textSize 2 → 24 px wide, ends at ~237)
+#define MQ_Y          8     // "MQ" label y — top-aligned with device name
+
+static bool     wifiOk    = false;
+static bool     mqttOk    = false;
+static bool     blinkOn   = true;
+static uint32_t lastBlink = 0;
+
+// WiFi icon: three concentric rings (2 px wide, 2 px gap) + centre dot,
+// clipped to a 90° wedge (45° each side of vertical) opening upward.
+// Radius 14 matches textSize(2) height so the icon sits at the same scale as
+// the device name and the "MQ" label beside it.
+static void drawWifiIcon(uint16_t color) {
+  // Build rings outside-in: fillCircle(BG) carves each gap, fillCircle(color)
+  // restores the next ring. Result: rings at r 3-5, 7-9, 11-14; gaps at 1-3, 5-7, 9-11.
+  gfx->fillCircle(WIFI_CX, WIFI_CY, 14, color);
+  gfx->fillCircle(WIFI_CX, WIFI_CY, 11, BG_COLOR);
+  gfx->fillCircle(WIFI_CX, WIFI_CY,  9, color);
+  gfx->fillCircle(WIFI_CX, WIFI_CY,  7, BG_COLOR);
+  gfx->fillCircle(WIFI_CX, WIFI_CY,  5, color);
+  gfx->fillCircle(WIFI_CX, WIFI_CY,  3, BG_COLOR);
+  gfx->fillCircle(WIFI_CX, WIFI_CY,  1, color);    // centre dot
+
+  // Clip outside the 90° wedge. tan(45°) = 1, so the wedge edge lands exactly
+  // r px horizontally from cx — the clipping triangles are perfect right triangles.
+  const int16_t cx = WIFI_CX, cy = WIFI_CY;
+  gfx->fillTriangle(cx, cy, cx-15, cy-15, cx-15, cy, BG_COLOR); // left
+  gfx->fillTriangle(cx, cy, cx+15, cy-15, cx+15, cy, BG_COLOR); // right
+  gfx->fillRect(cx-15, cy+1, 31, 15, BG_COLOR);                  // below dot
+}
+
+// Redraw the entire connection status corner (WiFi icon + MQ label).
+static void drawConnStatus() {
+  gfx->fillRect(CONN_X, 0, 240 - CONN_X, 32, BG_COLOR);
+
+  // WiFi icon — hidden during blink-off phase while disconnected
+  if (wifiOk || blinkOn)
+    drawWifiIcon(wifiOk ? OK_COLOR : ERR_COLOR);
+
+  // "MQ" label — textSize(2) matches the WiFi icon height
+  gfx->setTextSize(2);
+  gfx->setTextColor(mqttOk ? OK_COLOR : ERR_COLOR);
+  gfx->setCursor(MQ_X, MQ_Y);
+  gfx->print("MQ");
+}
+
 static void drawStaticUI() {
   gfx->fillScreen(BG_COLOR);
   gfx->setTextWrap(false);
 
+  // Device name — may be overwritten at right edge by drawConnStatus() below
   gfx->setTextColor(TITLE_COLOR);
   gfx->setTextSize(2);
-  gfx->setCursor(LABEL_X, 6);
-  gfx->print("ESP32-C6 BME680");
+  gfx->setCursor(LABEL_X, 8);
+  gfx->print(DEVICE_NAME);
 
-  // status / accuracy drawn dynamically in the footer by displayStatus()
+  // Connection status (clears x >= CONN_X and draws icons over any title overflow)
+  drawConnStatus();
 
-  // row labels
+  // Row labels
   gfx->setTextSize(2);
   gfx->setTextColor(LABEL_COLOR);
   gfx->setCursor(LABEL_X, ROW_IAQ);  gfx->print("IAQ");
@@ -95,7 +150,7 @@ static uint16_t co2Color(float co2) {
   return RGB565(0xEF, 0x47, 0x6F);                   // bad      - red
 }
 
-// ---- Public API (called from setup, bme680.ino, utils.ino) ----------------
+// ---- Public API (called from setup, bme680.ino, wifi.ino, mqtt.ino) --------
 
 void displayInit() {
   pinMode(PIN_BL, OUTPUT);
@@ -146,6 +201,31 @@ void displayNoSensor() {
   drawValue(ROW_PRES, "---- hPa", LABEL_COLOR);
 }
 
+// Called after Wi-Fi connects or drops.
+void displaySetWifiStatus(bool connected) {
+  if (wifiOk == connected) return;
+  wifiOk = connected;
+  if (connected) blinkOn = true;
+  drawConnStatus();
+}
+
+// Called after MQTT connects or disconnects.
+void displaySetMqttStatus(bool connected) {
+  if (mqttOk == connected) return;
+  mqttOk = connected;
+  drawConnStatus();
+}
+
+// Drive the WiFi blink animation. Call from loop() — no-op when Wi-Fi is up.
+void displayTick() {
+  if (wifiOk) return;
+  uint32_t now = millis();
+  if (now - lastBlink < 500) return;
+  lastBlink = now;
+  blinkOn = !blinkOn;
+  drawConnStatus();
+}
+
 #else  // ---- USE_DISPLAY == 0 : stub out the display API -------------------
 
 void displayInit() {}
@@ -153,5 +233,8 @@ void displayStatus(const char *, uint16_t) {}
 void displayAccuracy(uint8_t) {}
 void displayUpdate(const SensorPacket &) {}
 void displayNoSensor() {}
+void displaySetWifiStatus(bool) {}
+void displaySetMqttStatus(bool) {}
+void displayTick() {}
 
 #endif
