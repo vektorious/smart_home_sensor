@@ -39,6 +39,8 @@ Do the wiring (§1–3) first; then pick **one** firmware path.
 
 The BME680 talks to the board over **I2C** — two data lines plus power and ground.
 
+![Four jumper wires and the BME680 module before assembly](img/jumper_cable_01.jpeg)
+
 | BME680 pin | Board pin | Notes |
 |------------|-----------|-------|
 | VCC / VIN  | 3V3       | **3.3 V only** — do not use 5 V |
@@ -53,7 +55,9 @@ The BME680 talks to the board over **I2C** — two data lines plus power and gro
 If your BME680 module came with a loose pin header, solder it on first so the jumper wires
 have something to grip.
 
-> 📷 _Wiring photo / diagram — TODO (see [`TODO.md`](../TODO.md))._
+![Jumper wires soldered onto the BME680 pin header](img/jumper_soldered_02.jpeg)
+
+![BME680 connected to the Waveshare board via jumper wires](img/sensor_attached_03.jpeg)
 
 ---
 
@@ -72,6 +76,14 @@ readings (see [`background_information.md`](background_information.md) for detai
 3. **Position the BME680** on top of the styrofoam so it sits just under the lid opening.
 4. **Close with the lid** — the BME680 should end up directly beneath the lid, exposed to
    room air rather than heat from the board.
+
+![ESP32 board seated in the enclosure body with the BME680 ready to fold in](img/esp_in_housing_04.jpeg)
+
+![BME680 resting on the heat-shield packing material inside the enclosure](img/sensor_heat_shield_05.jpeg)
+
+![Lid positioned over the enclosure](img/housing_lid_06.jpeg)
+
+![Completed enclosure with lid closed](img/housing_lid_closed_07.jpeg)
 
 Enclosure files and FreeCAD source: [`hardware/3d-print/`](../hardware/3d-print/).
 
@@ -202,6 +214,8 @@ Reaching accuracy 3 the first time can take a few hours of varied air; full cali
 doesn't start from scratch every time. See
 [`background_information.md`](background_information.md) for what IAQ, CO₂-equivalent, and VOC
 actually mean.
+
+![Finished device showing live sensor readings — IAQ still stabilizing after first boot](img/final_08.jpeg)
 
 ---
 
