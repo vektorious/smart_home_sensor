@@ -101,6 +101,8 @@ Enclosure files and FreeCAD source: [`hardware/3d-print/`](../hardware/3d-print/
 4. Select **Tools ▸ Board ▸ ESP32 Arduino ▸ ESP32C6 Dev Module**.
 5. Set **Tools ▸ USB CDC On Boot ▸ Enabled**. The ESP32-C6 uses native USB — without this
    the Serial Monitor won't receive output during boot and the port may not appear reliably.
+6. Set **Tools ▸ Partition Scheme ▸ No OTA (2MB APP / 2MB SPIFFS)**. This gives the firmware
+   the full 2 MB it needs — the BSEC2 library is large and the default scheme is too small.
 
 ### 4.2 Install Required Libraries
 
