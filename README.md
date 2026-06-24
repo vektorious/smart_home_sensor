@@ -9,7 +9,7 @@ The device reads a Bosch **BME680** environmental sensor, runs Bosch's **BSEC2**
 derive an air-quality index, shows the live values on a colour display, and publishes them to
 Home Assistant.
 
-![Finished Smart Home Sensor showing live readings on the colour display](instructions/img/final_08.jpeg)
+![Finished Smart Home Sensor showing live readings on the colour display](instructions/img/device_hero.jpeg)
 
 ---
 
