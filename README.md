@@ -1,5 +1,7 @@
 # Smart Home Sensor Starter Kit
 
+![Finished Smart Home Sensor showing live readings on the colour display](instructions/img/device_hero2.jpeg)
+
 A hands-on introduction to building a Wi-Fi-connected indoor air-quality sensor that lives on
 your shelf and feeds [Home Assistant](https://www.home-assistant.io/). You'll learn the basics
 of microcontroller programming, I2C sensors, air-quality processing, and how a DIY device shows
@@ -9,7 +11,7 @@ The device reads a Bosch **BME680** environmental sensor, runs Bosch's **BSEC2**
 derive an air-quality index, shows the live values on a colour display, and publishes them to
 Home Assistant.
 
-![Finished Smart Home Sensor showing live readings on the colour display](instructions/img/device_hero2.jpeg)
+
 
 ---
 
