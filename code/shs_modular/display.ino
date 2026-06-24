@@ -12,14 +12,13 @@
 static Arduino_DataBus *bus = new Arduino_ESP32SPI(
     PIN_LCD_DC, PIN_LCD_CS, PIN_SCLK, PIN_MOSI, PIN_MISO);
 
-// rotation: 0=native, 1=90° CW, 2=180°, 3=90° CCW
-// The ST7789 has a 240x320 internal framebuffer; for rotations 2/3 on a
-// 240x240 panel we shift the visible window by 80px via row_offset2.
+// The ST7789 has a 240x320 internal framebuffer; rotations 2/3 need an 80px
+// row_offset2 to shift the visible window into the right region of that buffer.
 static Arduino_GFX *gfx = new Arduino_ST7789(
-    bus, PIN_LCD_RST, 3 /* rotation: 90° CCW */, true /* IPS */,
+    bus, PIN_LCD_RST, LCD_ROTATION, true /* IPS */,
     240, 240,
-    0  /* col_offset1 */, 0  /* row_offset1 */,
-    0  /* col_offset2 */, 80 /* row_offset2 */);
+    0, 0,
+    0, (LCD_ROTATION == 2 || LCD_ROTATION == 3) ? 80 : 0);
 
 #define BG_COLOR    RGB565(0x10, 0x18, 0x20)
 #define TITLE_COLOR RGB565(0xFF, 0xD1, 0x66)

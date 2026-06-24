@@ -4,7 +4,10 @@
 //  config.h is gitignored so your credentials stay local.
 // ============================================================================
 #pragma once
-#include <Arduino.h>
+#ifndef ARDUINO
+#include <stdint.h>
+#include <math.h>
+#endif
 
 // ---------------------------------------------------------------------------
 //  Feature flags — set to 0 to compile a module out entirely.
@@ -23,16 +26,21 @@
 #define DEVICE_ID    "shs-livingroom"      // a-z, 0-9, '-' only; unique per device
 
 // ---------------------------------------------------------------------------
-//  MQTT broker (e.g. the Mosquitto add-on in Home Assistant)
+//  MQTT broker
 //  Leave USER/PASS empty ("") for an anonymous broker.
 // ---------------------------------------------------------------------------
-#define MQTT_TLS             0                // 1 = TLS/MQTTS, 0 = plain (local Mosquitto)
+#define MQTT_TLS             0                // 1 = TLS/MQTTS, 0 = plain
 #define MQTT_HOST            "172.22.1.149"   // broker IP or hostname
 #define MQTT_PORT            1883
 #define MQTT_USER            "mqtt-user"
 #define MQTT_PASS            "mqtt-password"
-#define HA_DISCOVERY_PREFIX  "homeassistant"  // HA default; change only if you did
-#define MQTT_PUBLISH_MS      30000UL          // publish to HA at most every 30 s
+#define MQTT_TOPIC_PREFIX    "diy-sensors"    // base; readings go to <prefix>/<DEVICE_ID>/<key>
+#define MQTT_PUBLISH_MS      30000UL          // publish interval (ms)
+
+// ---------------------------------------------------------------------------
+//  Display rotation — 0=0°, 1=90° CW, 2=180°, 3=90° CCW
+// ---------------------------------------------------------------------------
+#define LCD_ROTATION  0
 
 // ---------------------------------------------------------------------------
 //  Display pins (Waveshare ESP32-C6-LCD-1.3, ST7789 over SPI)
