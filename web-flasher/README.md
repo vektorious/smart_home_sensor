@@ -119,8 +119,15 @@ The page states a withdrawal date, and the date is the point:
 2. remove the key from `API_KEYS` in the server `.env` and restart the service;
 3. `python -m app.admin delete-key-data <sha256>` for anything left behind.
 
-With `POLICY_<NAME>_PERSISTENT_DEVICES=false` step 3 is mostly a formality — the
+With `POLICY_<NAME>_PERSISTENT_DEVICES=false` step 3 is mostly a formality: the
 devices expire 48 h after their last reading on their own.
+
+**Set that policy before the first board claims its ID.** `persistent` is a column
+stamped at creation (`routes/ingest.py`: `persistent=authenticated and
+policy.persistent_devices`) and the sweep reads the column, not the current policy.
+Applied afterwards it changes nothing for devices that already exist: they stay
+persistent forever, are never swept, and their IDs never become claimable again
+without deleting them by hand.
 
 Students keep their hardware: the keyless **sensorboard** image stays on the page and
 publishes to the same dashboard. It claims the same device ID, so if the workshop
