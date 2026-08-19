@@ -42,12 +42,18 @@ static const uint32_t SETTINGS_VERSION = 2;
 //  Same board + same salt = same key, across factory resets, flash erases,
 //  reflashes and variant switches. Nothing to lose, nothing to write down.
 //
-//  The salt ships inside a publicly downloadable workshop image, so anyone with
-//  that image can derive any workshop device's key. That is an accepted
-//  trade-off, not an oversight: the shared workshop API key is in the same
-//  binary, so the write key was never the secret holding the door shut. It
-//  prevents students colliding on an ID, and it is scoped to one workshop by
-//  rotating the salt and withdrawing the image afterwards.
+//  The salt ships inside a publicly downloadable workshop image, so it is not a
+//  secret. It is not quite a free pass either: the HMAC covers the full 48-bit
+//  MAC, while the public device ID carries only the low 32 (OUI + one NIC byte),
+//  leaving 65,536 candidates that can only be tested against the server one POST
+//  at a time. What defeats that entirely is proximity — the Wi-Fi station MAC is
+//  this same efuse MAC, broadcast in every frame, so anyone in radio range reads
+//  the derivation input directly.
+//
+//  That is an accepted trade-off, not an oversight. The shared workshop API key
+//  sits in the same binary, so the write key was never the secret holding the
+//  door shut; it stops students colliding on an ID, and it is scoped to one
+//  workshop by rotating the salt and withdrawing the image afterwards.
 //
 //  Without a salt (any build that has no workshop_secrets.h) there is nothing
 //  to derive from, so we fall back to a random key generated once and kept in

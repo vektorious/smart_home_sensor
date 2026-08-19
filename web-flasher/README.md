@@ -70,13 +70,39 @@ The sensorboard image is built against the gitignored
 in an API key, a project slug, and the salt each device derives its write key from.
 
 **Treat it as a temporary artefact.** Anything in that header is inside a binary you
-are serving publicly: anyone who downloads it can read the API key, and can derive
-any workshop device's write key from its (public) device ID. That is an accepted
-trade-off for a short workshop, not a safe steady state. So:
+are serving publicly, so `strings` recovers it in seconds. The **API key** is
+therefore effectively published: anyone who downloads the image can write to your
+instance under the workshop policy, and because the write budget is charged per
+credential they can drain the same bucket the class is drawing from.
+
+The **salt** is weaker than it looks, but not as weak as "the key is public":
+
+- The write key is `HMAC-SHA256(salt, mac)` over the **full 48-bit MAC**, while the
+  public device ID carries only the low 32 bits — and those are the OUI plus one
+  NIC byte, the predictable part. A device ID therefore leaves 2^16 = 65,536
+  candidates, with no offline way to test one: each guess costs a POST. Under the
+  per-IP rate limits that is hours per device and a wall of 403s in the ingest log.
+- That protection is arithmetic, not secrecy, and it does not survive physical
+  proximity. The ESP32's Wi-Fi station MAC **is** the base efuse MAC — the exact
+  derivation input — and it is broadcast in the clear in every frame. Anyone in
+  radio range can read all 48 bits passively, without joining the network.
+
+So: remote attackers face a slow, noisy, per-device brute force; anyone in the room
+gets a device's write key for free. That is inherent to deriving from the MAC at all
+— no salt scheme changes it, because the hardware broadcasts the input — and it is
+the price of a key that survives a flash erase so a student cannot brick their
+device ID. For a classroom it is a prank vector, not a breach. Mention it in the
+briefing rather than engineering around it.
+
+Either way the image is scoped to one event:
 
 - generate a fresh salt (`openssl rand -hex 32`) and a fresh API key per workshop;
 - take the image down from `gh-pages` when the workshop ends;
-- revoke the API key afterwards.
+- revoke the API key afterwards, then `python -m app.admin delete-key-data <sha256>`.
+
+If that exposure is unwelcome, the workshop image does not have to be public: drop
+`manifest-sensorboard.json` from the page and hand the binary out on a USB stick.
+The HA and display-only images carry no secrets and can stay up.
 
 Without `workshop_secrets.h` the build still works — devices then publish
 anonymously with a random write key and expire 48 h after their last write.
