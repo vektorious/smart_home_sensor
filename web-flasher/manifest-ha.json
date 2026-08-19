@@ -1,12 +1,15 @@
 {
   "name": "Smart Home Sensor — Home Assistant (MQTT)",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-C6",
       "parts": [
-        { "path": "firmware/shs-ha.bin", "offset": 0 }
+        {
+          "path": "firmware/shs-ha.bin",
+          "offset": 0
+        }
       ]
     }
   ]

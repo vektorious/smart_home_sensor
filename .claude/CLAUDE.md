@@ -16,10 +16,9 @@ connects to the board with four I2C jumper wires.
 
 **Hardware:** Waveshare **ESP32-C6-LCD-1.3** (ESP32-C6 + ST7789 240×240 IPS display) + BME680.
 
-## One sketch, three images
+## One sketch, four images
 
-`code/shs_modular/` builds three variants, selected by `SHS_VARIANT` in `config.h` (or
-`-DSHS_VARIANT=n` from the command line — see `web-flasher/build.sh`):
+Three variants via `SHS_VARIANT` in `config.h` (or `-DSHS_VARIANT=n`):
 
 | `SHS_VARIANT` | Value | Backend | Flags set |
 |---|---|---|---|
@@ -28,6 +27,20 @@ connects to the board with four I2C jumper wires.
 | `SHS_VARIANT_DISPLAY` | 3 | none | neither |
 
 `USE_NETWORK` is the OR of the two — it gates `wifi.ino` and `portal.ino`.
+
+Variant 2 ships as **two** images: `workshop` (compiles in `workshop_secrets.h`) and
+`sensorboard` (`-DSHS_NO_WORKSHOP_SECRETS` forces the keyless build even when the
+header is present). The include is gated on `USE_SENSORBOARD` too, or the credentials
+would be linked into the HA and display images — `resetSettingsToDefaults()` copies
+`DEFAULT_API_KEY` regardless of variant, so the literal survives into binaries that
+have no use for it and are served publicly. `SHS_DERIVED_WRITE_KEY` (1 when a salt is
+compiled in) drives the portal's write-key UI: a salted build re-derives every boot,
+so the manual override field is only offered on keyless builds, where it can take
+effect. `build.sh workshop` refuses to build without the secrets header.
+
+**The workshop key is not about persistence** (that is switched off in the server
+policy). It buys the per-IP limits: anonymous allows 10 active devices, 5 new per
+hour and 1,000 requests/day per IP, and a class shares one NAT address.
 
 **Alternative — `code/esphome/smart_home_sensor.yaml`** (ESPHome): native HA API, no broker.
 Same metrics, minimal display. Not verified on hardware yet.
@@ -38,7 +51,7 @@ from.
 
 ## Build & Upload
 
-`web-flasher/build.sh` builds all three images with `arduino-cli` and drops merged binaries
+`web-flasher/build.sh` builds all four images with `arduino-cli` and drops merged binaries
 into `web-flasher/firmware/`; it also recreates the missing esp32c6 BSEC blob. For the IDE:
 
 1. Arduino IDE + esp32 board package (Espressif). Board: **ESP32C6 Dev Module**.

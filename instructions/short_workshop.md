@@ -1,8 +1,9 @@
 # Short Workshop — build a sensor in 90 minutes
 
-This is the fast path. You flash a prebuilt firmware from your browser, wire up the
-sensor, name your device, and watch your readings appear on a shared dashboard at
-[diy-sensor.org](https://diy-sensor.org). No Arduino IDE, no libraries, no account.
+Written for the **European Impact Sprint**. You flash a prebuilt firmware from your
+browser, wire up the sensor, name your device, and watch your readings appear on a
+shared dashboard at [diy-sensor.org](https://diy-sensor.org). No Arduino IDE, no
+libraries, no account.
 
 If you want to keep the device on your own smart home afterwards, the
 [full build instructions](build_instructions.md) cover the Home Assistant path — the
@@ -36,7 +37,7 @@ not swapped — that is the single most common reason a board reports no sensor.
 ## 2. Flash the firmware (10 min)
 
 1. Open the [web flasher](https://vektorious.github.io/smart_home_sensor/).
-2. Leave **Short workshop — diy-sensor.org** selected.
+2. Leave **European Impact Sprint** selected.
 3. Plug the board into your laptop with a USB-C **data** cable.
 4. Click **Connect**, choose the port named `USB JTAG/serial debug unit`, and click
    **Install**. It takes about a minute.
@@ -111,10 +112,23 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
 
 ## Taking it home
 
-The device keeps publishing wherever it finds the workshop Wi-Fi. Two things to know:
+The device keeps publishing wherever it finds a Wi-Fi network it knows. Press RESET
+twice to put your home network in.
 
-- **The dashboard is public and temporary.** Anyone can see it, and the workshop API key
-  is withdrawn after the event. Your data is not private and is not permanent.
-- **To keep it for good,** reflash the **Home Assistant** image from the same flasher page
-  and point it at your own broker, or set your own API URL in the setup page. The
-  [full instructions](build_instructions.md) walk through it.
+**The sprint firmware has an end date: 26 August 2026**, one week after the workshop.
+On that day the image comes off the flasher page and its key is withdrawn, so boards
+still running it stop publishing. Sprint readings are removed 48 hours after a
+device's last reading — nothing on that dashboard is meant to be permanent, and it is
+public while it lasts.
+
+Your board does not expire with it. Three ways on:
+
+- **Keep using the dashboard** — re-flash with the **diy-sensor.org** image, which
+  needs no key and stays on the flasher page. Same device ID, same dashboard. If you
+  do it before your sprint device has expired, copy the write key from the sprint
+  setup page first and paste it into the new build's *Write key* field, and the device
+  carries on uninterrupted.
+- **Move it to Home Assistant** — flash the **Home Assistant** image and point it at
+  your own broker. The [full instructions](build_instructions.md) walk through it.
+- **Point it at your own server** — any diy-sensor.org instance works; set the API URL
+  in the setup page.

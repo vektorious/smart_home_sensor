@@ -58,7 +58,10 @@ static const uint32_t SETTINGS_VERSION = 2;
 //  Without a salt (any build that has no workshop_secrets.h) there is nothing
 //  to derive from, so we fall back to a random key generated once and kept in
 //  NVS. That key IS secret; the portal displays it so it can be written down,
-//  and it can be re-entered by hand to re-adopt an existing device ID.
+//  and offers a field to paste one in — which is how a board re-adopts a device
+//  ID it claimed under a different build. A salted build re-derives on every
+//  boot and would overwrite anything entered, so the field is only offered
+//  where it can actually take effect.
 // ---------------------------------------------------------------------------
 
 static void macToBytes(uint8_t out[6]) {

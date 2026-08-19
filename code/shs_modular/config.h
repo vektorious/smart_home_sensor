@@ -68,13 +68,25 @@
 
 // ---------------------------------------------------------------------------
 //  diy-sensor.org defaults (SENSORBOARD build)
-//  The API key and project come from workshop_secrets.h when it exists; without
-//  it the device publishes anonymously and expires after 48 h idle.
+//  The API key and project come from workshop_secrets.h when it is compiled in.
+//  Without it the device publishes anonymously: it claims its ID with a random
+//  write key kept in NVS, and the server deletes it 48 h after its last write.
+//  That expiry is what makes the keyless build safe to hand out indefinitely —
+//  an abandoned device cleans itself up, and a flash erase that loses the random
+//  key only costs 48 h before the ID can be claimed again.
 // ---------------------------------------------------------------------------
 #define DEFAULT_API_URL       "https://diy-sensor.org/sensor/measurement"
 #define DASHBOARD_URL_PREFIX  "diy-sensor.org/dashboard/device/"
 
-#if __has_include("workshop_secrets.h")
+// The standard and workshop images are the same variant; they differ only in
+// whether these credentials are compiled in. -DSHS_NO_WORKSHOP_SECRETS forces
+// the standard build even on a machine that has the header, so both come out of
+// one source tree in one run of build.sh.
+// Gated on USE_SENSORBOARD as well: without that, the credentials would be
+// linked into the Home Assistant and display-only images too — they still copy
+// DEFAULT_API_KEY into settings, so the literal survives into a binary that has
+// no use for it and is served publicly.
+#if USE_SENSORBOARD && __has_include("workshop_secrets.h") && !defined(SHS_NO_WORKSHOP_SECRETS)
   #include "workshop_secrets.h"
 #endif
 #ifndef WORKSHOP_API_KEY
@@ -84,7 +96,10 @@
   #define WORKSHOP_PROJECT  ""
 #endif
 #ifndef WORKSHOP_KEY_SALT
-  #define WORKSHOP_KEY_SALT ""     // empty = random write key generated on first boot
+  #define WORKSHOP_KEY_SALT ""       // no salt: random write key on first boot
+  #define SHS_DERIVED_WRITE_KEY  0
+#else
+  #define SHS_DERIVED_WRITE_KEY  1   // key reproduced from the MAC at every boot
 #endif
 
 #define DEFAULT_API_KEY  WORKSHOP_API_KEY

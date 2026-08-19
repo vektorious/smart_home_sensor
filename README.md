@@ -91,16 +91,19 @@ firmware variants below.
 
 ## Firmware Variants
 
-One Arduino sketch in [`code/shs_modular/`](code/shs_modular/) builds three images,
-selected by `SHS_VARIANT` in [`config.h`](code/shs_modular/config.h). All three share
-the display UI, the BSEC read path and the setup portal — they differ only in where
-the readings go.
+One Arduino sketch in [`code/shs_modular/`](code/shs_modular/) builds four images.
+All four share the display UI, the BSEC read path and the setup portal — they differ
+only in where the readings go.
 
 | Image | Reports to | Needs | Who it's for |
 |-------|-----------|-------|--------------|
-| **Workshop** | [diy-sensor.org](https://diy-sensor.org) over HTTPS | nothing but Wi-Fi | Short workshops — flash, name the device, done |
+| **European Impact Sprint** | [diy-sensor.org](https://diy-sensor.org), keyed | nothing but Wi-Fi | The sprint itself — flash, name the device, done. Withdrawn 26 Aug 2026 |
+| **diy-sensor.org** | the same dashboard, keyless | nothing but Wi-Fi | Everyone else, and sprint participants afterwards. Stays available |
 | **Home Assistant** | MQTT auto-discovery | an MQTT broker | Keeping the device permanently, in your own smart home |
 | **Display only** | nothing | nothing | Checking the hardware before dealing with a network |
+
+The two diy-sensor images are the same firmware; the sprint build just carries the
+event's credentials so it needs no configuration on the day.
 
 Every per-device value — device name, broker address, API key, publish interval,
 temperature offset — lives in the device's flash and is edited from a **setup portal**

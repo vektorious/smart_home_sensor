@@ -15,8 +15,17 @@ OUT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/firmware"
 BUILD_ROOT="$(mktemp -d)"
 trap 'rm -rf "$BUILD_ROOT"' EXIT
 
-# variant name -> SHS_VARIANT value (must match config.h)
-declare -A VARIANTS=( [ha]=1 [sensorboard]=2 [display]=3 )
+# Image name -> the flags that define it. The two diy-sensor images are the same
+# variant: "workshop" compiles in workshop_secrets.h, "sensorboard" is forced
+# keyless so it can outlive the event.
+declare -A VARIANTS=(
+  [workshop]="-DSHS_VARIANT=2"
+  [sensorboard]="-DSHS_VARIANT=2 -DSHS_NO_WORKSHOP_SECRETS"
+  [ha]="-DSHS_VARIANT=1"
+  [display]="-DSHS_VARIANT=3"
+)
+# Deterministic order, so a full run always builds them in the same sequence.
+ORDER=(workshop sensorboard ha display)
 
 # The BSEC2 library ships no esp32c6 blob. The C6 is soft-float RISC-V
 # (rv32imac) and ABI-compatible with the C3 one, so it is created as a copy —
@@ -29,26 +38,34 @@ if [[ -d "$BSEC_SRC/esp32c3" && ! -f "$BSEC_SRC/esp32c6/libalgobsec.a" ]]; then
   cp "$BSEC_SRC/esp32c3/libalgobsec.a" "$BSEC_SRC/esp32c6/libalgobsec.a"
 fi
 
-if [[ ! -f "$SKETCH_DIR/shs_modular/workshop_secrets.h" ]]; then
-  echo "!!  No workshop_secrets.h — the sensorboard image will publish anonymously"
-  echo "!!  (temporary devices, 48 h idle expiry). Copy workshop_secrets.example.h"
-  echo "!!  to workshop_secrets.h to bake in the workshop key and project."
-fi
-
 mkdir -p "$OUT_DIR"
-targets=("${@:-${!VARIANTS[@]}}")
+targets=("$@")
+if [[ ${#targets[@]} -eq 0 ]]; then targets=("${ORDER[@]}"); fi
+
+HAS_SECRETS=0
+[[ -f "$SKETCH_DIR/shs_modular/workshop_secrets.h" ]] && HAS_SECRETS=1
 
 for name in "${targets[@]}"; do
-  value="${VARIANTS[$name]:-}"
-  if [[ -z "$value" ]]; then
-    echo "Unknown variant '$name' (expected: ${!VARIANTS[*]})" >&2
+  flags="${VARIANTS[$name]:-}"
+  if [[ -z "$flags" ]]; then
+    echo "Unknown image '$name' (expected: ${ORDER[*]})" >&2
     exit 2
   fi
 
-  echo "==> Building $name (SHS_VARIANT=$value)"
+  # Refuse to build a workshop image without credentials. It would compile and
+  # look right, then publish anonymously — indistinguishable from the standard
+  # image except that it claims to be the workshop one.
+  if [[ "$name" == "workshop" && $HAS_SECRETS -eq 0 ]]; then
+    echo "!!  Cannot build the workshop image: workshop_secrets.h is missing." >&2
+    echo "!!  Copy workshop_secrets.example.h to workshop_secrets.h and fill it in," >&2
+    echo "!!  or build the keyless image instead:  ./build.sh sensorboard" >&2
+    exit 3
+  fi
+
+  echo "==> Building $name ($flags)"
   arduino-cli compile \
     --fqbn "$FQBN" \
-    --build-property "compiler.cpp.extra_flags=-DSHS_VARIANT=$value" \
+    --build-property "compiler.cpp.extra_flags=$flags" \
     --output-dir "$BUILD_ROOT/$name" \
     "$SKETCH_DIR/shs_modular"
 

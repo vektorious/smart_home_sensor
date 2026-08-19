@@ -9,24 +9,36 @@ Arduino IDE and no drivers.
 | File | Purpose |
 |------|---------|
 | `index.html` | The flasher page: firmware picker + install button |
-| `manifest-sensorboard.json` | Short workshop → diy-sensor.org |
+| `manifest-workshop.json` | European Impact Sprint — keyed, time-limited |
+| `manifest-sensorboard.json` | diy-sensor.org, keyless — the standard build |
 | `manifest-ha.json` | Home Assistant over MQTT |
 | `manifest-display.json` | Display only, no networking |
-| `build.sh` | Builds all three images into `firmware/` |
+| `build.sh` | Builds all four images into `firmware/` |
 | `firmware/*.bin` | Merged images (generated; gitignored on `main`) |
 
-## The three images
+## The four images
 
-All three come from the same sources in `code/shs_modular/`, selected by
-`SHS_VARIANT`. None of them carries per-device configuration: that lives in NVS and
-is entered in the setup portal after flashing, which is what lets one image serve a
-whole room.
+All four come from the same sources in `code/shs_modular/`. None carries per-device
+configuration: that lives in NVS and is entered in the setup portal after flashing,
+which is what lets one image serve a whole room.
 
-| Image | Backend | Needs |
-|---|---|---|
-| **sensorboard** | `POST` to diy-sensor.org | nothing — a Wi-Fi network |
-| **ha** | MQTT auto-discovery | an MQTT broker + the HA MQTT integration |
-| **display** | none | nothing |
+| Image | Build flags | Backend | Needs |
+|---|---|---|---|
+| **workshop** | `SHS_VARIANT=2` | diy-sensor.org, keyed | nothing — a Wi-Fi network |
+| **sensorboard** | `SHS_VARIANT=2 SHS_NO_WORKSHOP_SECRETS` | diy-sensor.org, keyless | nothing |
+| **ha** | `SHS_VARIANT=1` | MQTT auto-discovery | a broker + the HA MQTT integration |
+| **display** | `SHS_VARIANT=3` | none | nothing |
+
+`workshop` and `sensorboard` are the *same* variant and differ only in whether
+`workshop_secrets.h` is compiled in — `SHS_NO_WORKSHOP_SECRETS` forces the keyless
+build even on a machine that has the header, so both come out of one run of
+`build.sh`. The include is also gated on `USE_SENSORBOARD`, which keeps the
+credentials out of the `ha` and `display` images: those still copy
+`DEFAULT_API_KEY` into settings, so without the gate the literal would be linked
+into two binaries that have no use for it and are served publicly.
+
+`build.sh workshop` refuses to run without `workshop_secrets.h` rather than quietly
+producing an anonymous binary that calls itself the workshop image.
 
 ## Requirements (for whoever is flashing)
 
@@ -39,7 +51,7 @@ whole room.
 ## Building the images
 
 ```bash
-./build.sh                 # all three
+./build.sh                 # all four
 ./build.sh sensorboard     # just one
 ```
 
@@ -61,51 +73,60 @@ offered the update.
 1. Set `SHS_VARIANT` in `config.h`.
 2. Board **ESP32C6 Dev Module**, **Tools → Partition Scheme → Huge APP**.
 3. **Sketch → Export Compiled Binary**, then copy `build/…/shs_modular.ino.merged.bin`
-   to `web-flasher/firmware/shs-<variant>.bin`.
+   to `web-flasher/firmware/shs-<image>.bin`. For the keyless build, add
+   `SHS_NO_WORKSHOP_SECRETS` to the sketch's build flags or temporarily move
+   `workshop_secrets.h` aside.
 
 ## Workshop image
 
-The sensorboard image is built against the gitignored
-`code/shs_modular/workshop_secrets.h` (see `workshop_secrets.example.h`), which bakes
-in an API key, a project slug, and the salt each device derives its write key from.
+Built against the gitignored `code/shs_modular/workshop_secrets.h` (see
+`workshop_secrets.example.h`), which bakes in an API key, the dashboard project, and
+the salt each device derives its write key from.
 
-**Treat it as a temporary artefact.** Anything in that header is inside a binary you
-are serving publicly, so `strings` recovers it in seconds. The **API key** is
-therefore effectively published: anyone who downloads the image can write to your
-instance under the workshop policy, and because the write budget is charged per
-credential they can drain the same bucket the class is drawing from.
+**Why it carries a key at all.** Not for persistence — that is switched *off* for the
+workshop policy. It is the per-IP limits: a class sits behind one NAT address, and the
+anonymous policy allows 10 active devices, 5 new devices an hour, and 1,000 requests a
+day. A keyless class of 80 boards would stop at the fifth. With a key those become
+500 / 100 / 50,000.
+
+**Treat it as a temporary artefact.** Anything in that header is inside a binary served
+publicly, so `strings` recovers it in seconds. The **API key** is therefore effectively
+published: anyone who downloads the image can write to the instance under the workshop
+policy, and because the write budget is charged per credential they can drain the same
+bucket the class draws from.
 
 The **salt** is weaker than it looks, but not as weak as "the key is public":
 
 - The write key is `HMAC-SHA256(salt, mac)` over the **full 48-bit MAC**, while the
-  public device ID carries only the low 32 bits — and those are the OUI plus one
-  NIC byte, the predictable part. A device ID therefore leaves 2^16 = 65,536
-  candidates, with no offline way to test one: each guess costs a POST. Under the
-  per-IP rate limits that is hours per device and a wall of 403s in the ingest log.
-- That protection is arithmetic, not secrecy, and it does not survive physical
-  proximity. The ESP32's Wi-Fi station MAC **is** the base efuse MAC — the exact
-  derivation input — and it is broadcast in the clear in every frame. Anyone in
-  radio range can read all 48 bits passively, without joining the network.
+  public device ID carries only the low 32 bits — and those are the OUI plus one NIC
+  byte, the predictable part. A device ID therefore leaves 2^16 = 65,536 candidates,
+  with no offline way to test one: each guess costs a POST. Under the per-IP limits
+  that is hours per device and a wall of 403s in the ingest log.
+- Proximity defeats it entirely. The ESP32's Wi-Fi station MAC **is** the base efuse
+  MAC — the exact derivation input — broadcast in the clear in every frame. Anyone in
+  radio range reads all 48 bits passively, without joining the network.
 
-So: remote attackers face a slow, noisy, per-device brute force; anyone in the room
-gets a device's write key for free. That is inherent to deriving from the MAC at all
-— no salt scheme changes it, because the hardware broadcasts the input — and it is
-the price of a key that survives a flash erase so a student cannot brick their
-device ID. For a classroom it is a prank vector, not a breach. Mention it in the
-briefing rather than engineering around it.
+Inherent to deriving from the MAC; no salt scheme changes it, and it is the price of a
+key that survives a flash erase so a student cannot brick their device ID. For a
+classroom it is a prank vector, not a breach.
 
-Either way the image is scoped to one event:
+### Retiring it
 
-- generate a fresh salt (`openssl rand -hex 32`) and a fresh API key per workshop;
-- take the image down from `gh-pages` when the workshop ends;
-- revoke the API key afterwards, then `python -m app.admin delete-key-data <sha256>`.
+The page states a withdrawal date, and the date is the point:
 
-If that exposure is unwelcome, the workshop image does not have to be public: drop
-`manifest-sensorboard.json` from the page and hand the binary out on a USB stick.
-The HA and display-only images carry no secrets and can stay up.
+1. delete `manifest-workshop.json` and `firmware/shs-workshop.bin` from `gh-pages`,
+   and drop the option from `index.html`;
+2. remove the key from `API_KEYS` in the server `.env` and restart the service;
+3. `python -m app.admin delete-key-data <sha256>` for anything left behind.
 
-Without `workshop_secrets.h` the build still works — devices then publish
-anonymously with a random write key and expire 48 h after their last write.
+With `POLICY_<NAME>_PERSISTENT_DEVICES=false` step 3 is mostly a formality — the
+devices expire 48 h after their last reading on their own.
+
+Students keep their hardware: the keyless **sensorboard** image stays on the page and
+publishes to the same dashboard. It claims the same device ID, so if the workshop
+device has not expired yet, paste the write key shown on the workshop portal page into
+the keyless build's *Write key* field to adopt it. After expiry the ID is simply free
+again.
 
 ## Hosting
 
@@ -115,17 +136,19 @@ the site lives on a dedicated `gh-pages` branch mirroring this folder at its roo
 ```
 gh-pages/
 ├── index.html
+├── manifest-workshop.json
 ├── manifest-sensorboard.json
 ├── manifest-ha.json
 ├── manifest-display.json
 ├── .nojekyll
 └── firmware/
+    ├── shs-workshop.bin
     ├── shs-sensorboard.bin
     ├── shs-ha.bin
     └── shs-display.bin
 ```
 
-The binaries live only on `gh-pages` — three 4 MB images per release would bloat
+The binaries live only on `gh-pages` — four 4 MB images per release would bloat
 `main`'s history for no benefit, which is why `firmware/.gitignore` excludes them.
 
 ```bash

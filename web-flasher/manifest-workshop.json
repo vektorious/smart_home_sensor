@@ -1,13 +1,13 @@
 {
-  "name": "Smart Home Sensor — diy-sensor.org",
-  "version": "2.0.0",
+  "name": "Smart Home Sensor — European Impact Sprint",
+  "version": "1.0.0",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-C6",
       "parts": [
         {
-          "path": "firmware/shs-sensorboard.bin",
+          "path": "firmware/shs-workshop.bin",
           "offset": 0
         }
       ]

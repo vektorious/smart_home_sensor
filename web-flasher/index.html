@@ -28,6 +28,15 @@
     label.pick:has(input:checked) { border-color: #2f855a; background: #f0f9f4; }
     label.pick input { margin-top: 4px; }
     .pick .t { font-weight: 600; }
+    .tag {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+      background: #2f855a; color: #fff; border-radius: 20px; padding: 2px 9px;
+      margin-left: 6px; vertical-align: 1px;
+    }
+    .expiry {
+      background: #fff8e6; border: 1px solid #f0d98c; border-radius: 10px;
+      padding: 14px 16px; margin-top: 18px; font-size: 0.9rem; line-height: 1.55;
+    }
     .pick .d { font-size: 0.88rem; color: #6b7280; }
     .install { text-align: center; }
     esp-web-install-button { --esp-tools-button-color: #2f855a; }
@@ -46,7 +55,7 @@
       body { color: #e8eaed; background: #0f1115; }
       .card, label.pick { background: #1a1d24; border-color: #2a2e37; }
       label.pick:has(input:checked) { border-color: #4ade80; background: #14251b; }
-      .callout { background: #2a2410; border-color: #5c4d1a; }
+      .callout, .expiry { background: #2a2410; border-color: #5c4d1a; }
       code { background: #2a2e37; color: #e8eaed; }
       th, td { border-color: #2a2e37; }
     }
@@ -60,12 +69,21 @@
   <div class="card">
     <div class="picker">
       <label class="pick">
-        <input type="radio" name="fw" value="manifest-sensorboard.json" checked>
+        <input type="radio" name="fw" value="manifest-workshop.json" checked>
         <span>
-          <span class="t">Short workshop — diy-sensor.org</span><br>
-          <span class="d">Publishes to the shared dashboard out of the box. Name your
-          device in the setup portal and it appears at diy-sensor.org. Nothing to
-          install, no account.</span>
+          <span class="t">European Impact Sprint <span class="tag">workshop</span></span><br>
+          <span class="d">Publishes to the sprint's shared dashboard out of the box. Name your
+          device in the setup portal and it appears under the
+          <code>european-impact-sprint</code> project. Nothing to configure.</span>
+        </span>
+      </label>
+      <label class="pick">
+        <input type="radio" name="fw" value="manifest-sensorboard.json">
+        <span>
+          <span class="t">diy-sensor.org</span><br>
+          <span class="d">The standard build. Same dashboard, no API key — your device claims
+          its own ID and keeps its readings for 48 h after the last one. This image stays
+          available indefinitely.</span>
         </span>
       </label>
       <label class="pick">
@@ -86,8 +104,19 @@
       </label>
     </div>
 
+    <div class="expiry">
+      <strong>The European Impact Sprint image comes down on 26 August 2026</strong>, one week
+      after the workshop, and its key is withdrawn at the same time. Devices still running it
+      stop publishing then, and sprint readings are removed 48&nbsp;hours after a device's last
+      reading — nothing there is meant to be permanent.
+      <br><br>
+      Your board does not become useless: re-flash it with the
+      <strong>diy-sensor.org</strong> image above, which needs no key and stays on this page.
+      It publishes to the same dashboard under the same device ID.
+    </div>
+
     <div class="install">
-      <esp-web-install-button id="installer" manifest="manifest-sensorboard.json">
+      <esp-web-install-button id="installer" manifest="manifest-workshop.json">
         <span slot="unsupported">
           Your browser doesn’t support Web Serial. Use <strong>Chrome</strong>,
           <strong>Edge</strong>, or <strong>Opera</strong> on a desktop computer.
@@ -120,6 +149,8 @@
     <li>The board reboots and opens a Wi-Fi access point named
         <code>&lt;device&gt;-Setup</code>. Join it, and the setup page opens at
         <code>192.168.4.1</code> — the display shows both.</li>
+    <li>Name your device, then use <strong>Send a test reading</strong> to confirm it reaches
+        the dashboard before you walk away from it.</li>
   </ol>
 
   <h2>Getting back into setup later</h2>

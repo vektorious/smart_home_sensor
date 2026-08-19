@@ -22,7 +22,7 @@
 
 // Dashboard grouping. All devices flashed with this image land in one project
 // view at diy-sensor.org/dashboard/project/<slug>. Keep to [a-z0-9-].
-#define WORKSHOP_PROJECT   "shs-workshop-2026"
+#define WORKSHOP_PROJECT   "european-impact-sprint"
 
 // Salt for the per-device write key: writeKey = HMAC-SHA256(salt, efuse MAC),
 // truncated to 32 hex chars. Never stored in NVS — recomputed at every boot, so

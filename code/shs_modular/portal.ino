@@ -37,6 +37,9 @@ static WiFiManagerParameter *p_tempOff;
 static WiFiManagerParameter *p_project;
 static WiFiManagerParameter *p_apiUrl;
 static WiFiManagerParameter *p_apiKey;
+#if !SHS_DERIVED_WRITE_KEY
+static WiFiManagerParameter *p_writeKey;
+#endif
 #endif
 #if USE_MQTT
 static WiFiManagerParameter *p_mqttHost;
@@ -79,6 +82,14 @@ static void saveParamsCallback() {
     strlcpy(settings.apiUrl, p_apiUrl->getValue(), sizeof(settings.apiUrl));
   }
   strlcpy(settings.apiKey, p_apiKey->getValue(), sizeof(settings.apiKey));
+#if !SHS_DERIVED_WRITE_KEY
+  // Adopting a device ID claimed by an earlier build: pasting the key that owns
+  // it is the only way back in, since the server has no recovery path. Blank
+  // means "keep the current one" — otherwise saving the form would wipe it.
+  if (p_writeKey->getValue()[0]) {
+    strlcpy(settings.writeKey, p_writeKey->getValue(), sizeof(settings.writeKey));
+  }
+#endif
 #endif
 
 #if USE_MQTT
@@ -361,17 +372,23 @@ static String buildMenuHtml() {
   h += "</div>";
 
 #if USE_SENSORBOARD
-  // Only worth showing when it is a secret worth keeping: a derived key is
-  // reproducible from the board itself, so there is nothing to write down.
-  if (strlen(WORKSHOP_KEY_SALT) == 0) {
-    h += "<div style='margin:16px 0;padding:12px;border:1px solid #f0d98c;background:#fff8e6;border-radius:8px'>"
-         "<div style='font-size:.75rem;text-transform:uppercase;color:#7a6520'>Write key — note it down</div>"
-         "<div style='font-family:monospace;word-break:break-all;margin-top:4px'>"
-         + String(settings.writeKey) + "</div>"
-         "<div style='font-size:.75rem;color:#7a6520;margin-top:6px'>"
-         "This key proves you own the device ID. It cannot be recovered — if it is "
-         "lost, the ID stays claimed until it expires.</div></div>";
-  }
+  h += "<div style='margin:16px 0;padding:12px;border:1px solid #f0d98c;background:#fff8e6;border-radius:8px'>"
+       "<div style='font-size:.75rem;text-transform:uppercase;color:#7a6520'>Write key — note it down</div>"
+       "<div style='font-family:monospace;word-break:break-all;margin-top:4px'>"
+       + String(settings.writeKey) + "</div>"
+       "<div style='font-size:.75rem;color:#7a6520;margin-top:6px'>";
+#if SHS_DERIVED_WRITE_KEY
+  // Reproducible from the board — but only by the image holding the salt. Once
+  // the workshop firmware is withdrawn, this page is the last copy of it.
+  h += "This key proves you own the device ID. This build recreates it from the "
+       "board itself, so a reset cannot lose it — but only this firmware can "
+       "recreate it. Write it down if you want to keep the same device ID after "
+       "the workshop image is withdrawn.";
+#else
+  h += "This key proves you own the device ID. It cannot be recovered — if it is "
+       "lost, the ID stays claimed until it expires (48 h after the last reading).";
+#endif
+  h += "</div></div>";
 #endif
 
   h += "<form action='/live' method='get' style='margin:16px 0'>"
@@ -413,6 +430,12 @@ static void buildParameters() {
   wm.addParameter(p_project);
   wm.addParameter(p_apiUrl);
   wm.addParameter(p_apiKey);
+#if !SHS_DERIVED_WRITE_KEY
+  p_writeKey = new WiFiManagerParameter("wkey",
+      "Write key — blank keeps the current one; paste one to adopt an existing device ID",
+      "", sizeof(settings.writeKey) - 1);
+  wm.addParameter(p_writeKey);
+#endif
 #endif
 
 #if USE_MQTT
