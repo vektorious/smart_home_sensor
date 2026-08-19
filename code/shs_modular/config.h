@@ -77,6 +77,9 @@
 // ---------------------------------------------------------------------------
 #define DEFAULT_API_URL       "https://diy-sensor.org/sensor/measurement"
 #define DASHBOARD_URL_PREFIX  "diy-sensor.org/dashboard/device/"
+// With the scheme, for the QR code shown after setup: a phone camera needs a
+// resolvable URL, not a bare host path.
+#define DASHBOARD_URL_FULL    "https://diy-sensor.org/dashboard/device/"
 
 // The standard and workshop images are the same variant; they differ only in
 // whether these credentials are compiled in. -DSHS_NO_WORKSHOP_SECRETS forces
@@ -260,7 +263,10 @@ struct SensorPacket {
 // Functions taking SensorPacket by reference need explicit prototypes: the
 // Arduino auto-prototype generator skips reference parameters.
 SensorPacket sensorLatest();               // bme680.ino — most recent reading
+bool         bme680Ok();                   // bme680.ino — sensor found and subscribed
 void         displayUpdate(const SensorPacket &p);
+void         displayPortalSensor(const char *msg, uint16_t color);
+void         displayQr(const char *url, uint32_t showMs);
 void         mqttPublish(const SensorPacket &p);
 int          sensorboardSend(const SensorPacket &p);  // HTTP code, -1 if offline
 bool         isValidFloat(float v);

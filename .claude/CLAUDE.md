@@ -109,11 +109,17 @@ no branching.
 | `sensorboard.ino` | HTTPS POST to diy-sensor.org; stubbed when `USE_SENSORBOARD 0` |
 | `utils.ino` | `isValidFloat()` |
 
+**QR code:** `displayQr()` uses Espressif's encoder from the ESP32 core (`qrcode.h`,
+linked by default via `flags/ld_libs`) — no extra library. Installing the Arduino
+"QRCode" library (ricmoo) shadows the core header, since both are named `qrcode.h`,
+and breaks the build.
+
 **Arduino single-TU gotchas.** All `.ino` files concatenate into one translation unit, so a
 `static` global in two files is a redefinition (`Preferences prefs` was). Auto-generated
 prototypes are injected into the main sketch after *its* includes, so any signature naming a
-library type (`bsecOutputs`, `WiFiManagerParameter`) needs that header included in
-`shs_modular.ino` — otherwise it is prototyped against an unknown type.
+library type (`bsecOutputs`, `WiFiManagerParameter`, `esp_qrcode_handle_t`) needs that
+header included in `shs_modular.ino` — otherwise it is prototyped against an unknown
+type, even when the .ino that uses it includes the header itself.
 
 `SensorPacket` (in `config.h`) carries one reading from `bme680.ino` to `display.ino` and the
 backend modules; `sensorLatest()` re-exposes the most recent one to the portal. Status colours (`COLOR_INFO/OK/WARN/ERR`) are defined in `config.h` — not

@@ -121,6 +121,12 @@ In **Tools ▸ Manage Libraries**, search for and install:
 | WiFiManager | tzapu |
 | PubSubClient | Nick O'Leary |
 
+> **Do not install the Arduino "QRCode" library (ricmoo).** The ESP32 core already
+> ships Espressif's QR encoder, which the firmware uses for the dashboard QR code
+> shown after setup. Both headers are called `qrcode.h`, and the library shadows the
+> core one, so installing it breaks the build with `'esp_qrcode_handle_t' was not
+> declared`.
+
 ### 4.3 Add the ESP32-C6 BSEC Blob (important!)
 
 Bosch's `BSEC2` library ships precompiled algorithm blobs for several chips but, as of
