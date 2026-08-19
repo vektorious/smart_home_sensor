@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Home Sensor — Web Flasher</title>
+  <script type="module"
+          src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 680px; margin: 0 auto; padding: 40px 24px;
+      line-height: 1.6; color: #1a1d24; background: #f7f8fa;
+    }
+    h1 { font-size: 1.8rem; margin-bottom: 4px; }
+    .lead { color: #6b7280; margin-top: 0; }
+    .card {
+      background: #fff; border: 1px solid #e3e6eb; border-radius: 14px;
+      padding: 24px; margin: 24px 0;
+    }
+    .picker { display: grid; gap: 10px; margin-bottom: 20px; }
+    label.pick {
+      display: flex; gap: 12px; align-items: flex-start;
+      border: 1px solid #e3e6eb; border-radius: 10px; padding: 12px 14px;
+      cursor: pointer; background: #fbfcfd;
+    }
+    label.pick:has(input:checked) { border-color: #2f855a; background: #f0f9f4; }
+    label.pick input { margin-top: 4px; }
+    .pick .t { font-weight: 600; }
+    .pick .d { font-size: 0.88rem; color: #6b7280; }
+    .install { text-align: center; }
+    esp-web-install-button { --esp-tools-button-color: #2f855a; }
+    ol { padding-left: 20px; }
+    code { background: #eceef1; padding: 1px 6px; border-radius: 5px; font-size: 0.9em; }
+    .note { font-size: 0.9rem; color: #6b7280; }
+    .callout {
+      background: #fff8e6; border: 1px solid #f0d98c; border-radius: 12px;
+      padding: 16px 20px; margin: 24px 0;
+    }
+    .tight { margin: 8px 0 4px; }
+    .tight li { margin: 2px 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e3e6eb; }
+    @media (prefers-color-scheme: dark) {
+      body { color: #e8eaed; background: #0f1115; }
+      .card, label.pick { background: #1a1d24; border-color: #2a2e37; }
+      label.pick:has(input:checked) { border-color: #4ade80; background: #14251b; }
+      .callout { background: #2a2410; border-color: #5c4d1a; }
+      code { background: #2a2e37; color: #e8eaed; }
+      th, td { border-color: #2a2e37; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Smart Home Sensor — Web Flasher</h1>
+  <p class="lead">Install the firmware onto your board straight from the browser —
+     no Arduino IDE, no drivers.</p>
+
+  <div class="card">
+    <div class="picker">
+      <label class="pick">
+        <input type="radio" name="fw" value="manifest-sensorboard.json" checked>
+        <span>
+          <span class="t">Short workshop — diy-sensor.org</span><br>
+          <span class="d">Publishes to the shared dashboard out of the box. Name your
+          device in the setup portal and it appears at diy-sensor.org. Nothing to
+          install, no account.</span>
+        </span>
+      </label>
+      <label class="pick">
+        <input type="radio" name="fw" value="manifest-ha.json">
+        <span>
+          <span class="t">Home Assistant (MQTT)</span><br>
+          <span class="d">For your own Home Assistant instance. Needs an MQTT broker;
+          the device announces its own entities via auto-discovery.</span>
+        </span>
+      </label>
+      <label class="pick">
+        <input type="radio" name="fw" value="manifest-display.json">
+        <span>
+          <span class="t">Display only</span><br>
+          <span class="d">No networking at all — readings on the screen and the serial
+          console. Useful for checking the hardware before worrying about a network.</span>
+        </span>
+      </label>
+    </div>
+
+    <div class="install">
+      <esp-web-install-button id="installer" manifest="manifest-sensorboard.json">
+        <span slot="unsupported">
+          Your browser doesn’t support Web Serial. Use <strong>Chrome</strong>,
+          <strong>Edge</strong>, or <strong>Opera</strong> on a desktop computer.
+        </span>
+        <span slot="not-allowed">
+          Web Serial needs a secure (HTTPS) connection. Open this page over
+          <code>https://</code>.
+        </span>
+      </esp-web-install-button>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>⚠️ If the board doesn’t show up, start it in flashing mode.</strong>
+    <ol class="tight">
+      <li><strong>Unplug</strong> the board.</li>
+      <li><strong>Hold the BOOT button</strong> down.</li>
+      <li><strong>Plug in</strong> the USB-C cable while still holding BOOT.</li>
+      <li><strong>Release BOOT</strong> after about 2 seconds.</li>
+    </ol>
+    Use a USB-C <em>data</em> cable — a charge-only cable will never enumerate.
+  </div>
+
+  <h2>How to flash</h2>
+  <ol>
+    <li>Pick a firmware above.</li>
+    <li>Click <strong>Connect</strong> and choose the
+        <code>USB JTAG/serial debug unit</code> port.</li>
+    <li>Choose <strong>Install</strong> and wait for it to finish.</li>
+    <li>The board reboots and opens a Wi-Fi access point named
+        <code>&lt;device&gt;-Setup</code>. Join it, and the setup page opens at
+        <code>192.168.4.1</code> — the display shows both.</li>
+  </ol>
+
+  <h2>Getting back into setup later</h2>
+  <p>Press the <strong>RESET</strong> button twice in quick succession. The display
+     tells you when the window is open. Settings, Wi-Fi and the air-quality
+     calibration can then be reset separately from the setup page.</p>
+
+  <h2>What each build reports</h2>
+  <table>
+    <tr><th>Metric</th><th>Notes</th></tr>
+    <tr><td>IAQ + accuracy</td><td>Index 0–500. Only trustworthy at accuracy 3 —
+        the first calibration takes hours.</td></tr>
+    <tr><td>CO₂ equivalent</td><td>Estimated from VOC, not a real CO₂ measurement.</td></tr>
+    <tr><td>Breath-VOC equivalent</td><td>ppm</td></tr>
+    <tr><td>Temperature / humidity / pressure</td><td>Heat-compensated; the offset is
+        adjustable in the setup portal.</td></tr>
+  </table>
+
+  <p class="note">
+    Firmware target: Waveshare ESP32-C6-LCD-1.3 + BME680. See
+    <code>web-flasher/README.md</code> in the repository for how the images are built.
+  </p>
+
+<script>
+  // ESP Web Tools reads the manifest when the dialog opens, so swapping the
+  // attribute is enough — no need to re-create the button.
+  const installer = document.getElementById("installer");
+  for (const radio of document.querySelectorAll('input[name="fw"]')) {
+    radio.addEventListener("change", (e) => {
+      installer.setAttribute("manifest", e.target.value);
+      installer.manifest = e.target.value;
+    });
+  }
+</script>
+</body>
+</html>
