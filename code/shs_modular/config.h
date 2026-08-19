@@ -163,8 +163,11 @@
 
 // ---------------------------------------------------------------------------
 //  Display rotation — 0=0°, 1=90° CW, 2=180°, 3=90° CCW
+//  Only the factory default: it is editable in the setup portal, because which
+//  way up the board ends up depends on the enclosure and the shelf it sits on.
+//  Builds without networking have no portal and so keep this value.
 // ---------------------------------------------------------------------------
-#define LCD_ROTATION  0
+#define DEFAULT_LCD_ROTATION  0
 
 // ---------------------------------------------------------------------------
 //  Display pins (Waveshare ESP32-C6-LCD-1.3, ST7789 over SPI)
@@ -235,6 +238,7 @@ struct Settings {
   uint8_t  mqttMode;              // MQTT_MODE_*
   bool     mqttTls;
   uint32_t publishIntervalMin;
+  uint8_t  lcdRotation;           // 0-3, quarter turns
   float    tempOffsetC;
 };
 

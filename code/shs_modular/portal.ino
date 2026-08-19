@@ -33,6 +33,9 @@ static volatile bool portalDone = false;
 static WiFiManagerParameter *p_deviceName;
 static WiFiManagerParameter *p_pubMin;
 static WiFiManagerParameter *p_tempOff;
+#if USE_DISPLAY
+static WiFiManagerParameter *p_rotation;
+#endif
 #if USE_SENSORBOARD
 static WiFiManagerParameter *p_apiUrl;
 #if !SHS_HAS_WORKSHOP_KEY
@@ -77,6 +80,10 @@ static void saveParamsCallback() {
     settings.publishIntervalMin = pub;
   }
   settings.tempOffsetC = atof(p_tempOff->getValue());
+#if USE_DISPLAY
+  uint32_t rot = strtoul(p_rotation->getValue(), nullptr, 10);
+  if (rot <= 3) settings.lcdRotation = (uint8_t)rot;
+#endif
 
 #if USE_SENSORBOARD
   if (p_apiUrl->getValue()[0]) {
@@ -448,6 +455,16 @@ static void buildParameters() {
   wm.addParameter(p_deviceName);
   wm.addParameter(p_pubMin);
   wm.addParameter(p_tempOff);
+#if USE_DISPLAY
+  static char rotBuf[4];
+  snprintf(rotBuf, sizeof(rotBuf), "%u", settings.lcdRotation);
+  // Applied when the portal closes, not on save: rotating a screen the student
+  // is still reading setup instructions from would be an odd thing to do.
+  p_rotation = new WiFiManagerParameter("rot",
+      "Display rotation: 0, 1 = 90&deg;, 2 = 180&deg;, 3 = 270&deg; (applied when setup finishes)",
+      rotBuf, 3);
+  wm.addParameter(p_rotation);
+#endif
 
 #if USE_SENSORBOARD
   p_apiUrl  = new WiFiManagerParameter("aurl", "API URL",

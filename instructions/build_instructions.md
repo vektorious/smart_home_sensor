@@ -212,6 +212,7 @@ portal. The display shows you what to join and where to go.
    | Mode | `0` = HA auto-discovery (leave this) |
    | Publish interval | **Minutes** between readings; `5` is the default |
    | Temperature offset | °C to subtract for self-heating; see §6 |
+   | Display rotation | 0–3 quarter turns, for however the enclosure sits |
 
 5. **Live readings & connection test** — check the sensor values look sane, then press
    **Send a test reading** to confirm the broker accepts the connection *before* you walk

@@ -15,11 +15,14 @@ static Arduino_DataBus *bus = new Arduino_ESP32SPI(
 
 // The ST7789 has a 240x320 internal framebuffer; rotations 2/3 need an 80px
 // row_offset2 to shift the visible window into the right region of that buffer.
+// It is passed unconditionally rather than only for the compiled-in rotation:
+// Arduino_TFT::setRotation() picks the right pair of offsets per rotation, so
+// supplying both is what lets the rotation change at runtime.
 static Arduino_GFX *gfx = new Arduino_ST7789(
-    bus, PIN_LCD_RST, LCD_ROTATION, true /* IPS */,
+    bus, PIN_LCD_RST, DEFAULT_LCD_ROTATION, true /* IPS */,
     240, 240,
     0, 0,
-    0, (LCD_ROTATION == 2 || LCD_ROTATION == 3) ? 80 : 0);
+    0, 80);
 
 #define BG_COLOR    RGB565(0x10, 0x18, 0x20)
 #define TITLE_COLOR RGB565(0xFF, 0xD1, 0x66)
@@ -48,14 +51,30 @@ static Arduino_GFX *gfx = new Arduino_ST7789(
 #define ROW_PRES    188
 #define FOOTER_Y    216
 
-// Connection status area (top-right corner, x >= CONN_X)
-// Icon radius 14 matches textSize(2) height (16 px); cy=22 puts the top of the
-// icon at y=8, level with the device name.
-#define CONN_X      181     // left edge of WiFi + MQ area
-#define WIFI_CX     196     // WiFi icon centre x
-#define WIFI_CY      22     // WiFi icon centre y (dot); arcs open upward
-#define MQ_X        213     // "MQ" label x (textSize 2 → 24 px wide, ends at ~237)
-#define MQ_Y          8     // "MQ" label y — top-aligned with device name
+// ---------- Setup screen grid ----------
+// Four identical fields: an 8 px caption with a 16 px value 12 px below it,
+// on a 42 px pitch. Ends at 198, clear of the footer status line at 216.
+#define PORTAL_ROW1  44
+#define PORTAL_ROW2  86
+#define PORTAL_ROW3 128
+#define PORTAL_ROW4 170
+#define PORTAL_VALUE_DY 12
+#define PORTAL_FIELD_H  28
+
+// Connection status area (top-right corner, x >= CONN_X): [label][WiFi icon].
+// The label sits to the LEFT of the icon and is right-aligned against it, so a
+// two-character label ("MQ") and a three-character one ("API") both fit without
+// colliding with the icon or running off the 240 px edge. Icon radius 14
+// matches textSize(2) height (16 px); cy=22 puts its top at y=8, level with the
+// device name.
+#define WIFI_R       14
+#define WIFI_CX     221     // icon spans 207..235, leaving a 4 px right margin
+#define WIFI_CY      22
+#define ICON_LEFT   (WIFI_CX - WIFI_R)
+#define LABEL_GAP     6     // between label and icon
+#define CHAR_W2      12     // advance per char at textSize(2)
+#define CONN_X      160     // left edge of the reserved band (fits "API" + icon)
+#define MQ_Y          8     // label y — top-aligned with the device name
 
 static bool     wifiOk    = false;
 static int8_t   linkState = -1;   // -1 not tried, 0 failed, 1 ok
@@ -69,7 +88,7 @@ static uint32_t lastBlink = 0;
 static void drawWifiIcon(uint16_t color) {
   // Build rings outside-in: fillCircle(BG) carves each gap, fillCircle(color)
   // restores the next ring. Result: rings at r 3-5, 7-9, 11-14; gaps at 1-3, 5-7, 9-11.
-  gfx->fillCircle(WIFI_CX, WIFI_CY, 14, color);
+  gfx->fillCircle(WIFI_CX, WIFI_CY, WIFI_R, color);
   gfx->fillCircle(WIFI_CX, WIFI_CY, 11, BG_COLOR);
   gfx->fillCircle(WIFI_CX, WIFI_CY,  9, color);
   gfx->fillCircle(WIFI_CX, WIFI_CY,  7, BG_COLOR);
@@ -113,8 +132,8 @@ static void drawConnStatus() {
   uint16_t color = linkState < 0 ? LABEL_COLOR : (linkState ? OK_COLOR : ERR_COLOR);
   gfx->setTextSize(2);
   gfx->setTextColor(color);
-  // "API" is 3 chars at textSize 2 (18 px); nudge left so it still fits.
-  gfx->setCursor(strlen(label) > 2 ? MQ_X - 8 : MQ_X, MQ_Y);
+  // Right-align against the icon, whatever the label's length.
+  gfx->setCursor(ICON_LEFT - LABEL_GAP - (int16_t)(strlen(label) * CHAR_W2), MQ_Y);
   gfx->print(label);
 }
 
@@ -199,6 +218,7 @@ void displayInit() {
   pinMode(PIN_BL, OUTPUT);
   digitalWrite(PIN_BL, HIGH);
   if (!gfx->begin()) Serial.println("gfx->begin() failed");
+  gfx->setRotation(settings.lcdRotation & 0x03);
   drawStaticUI();
 }
 
@@ -279,6 +299,22 @@ void displayTick() {
 // Full-screen commissioning view. The AP name and the device ID are the two
 // things a student needs while the portal is open, and they are needed exactly
 // when the device has no other way to tell them — no network, no dashboard.
+// One setup-screen field: a small caption with the value on the line below.
+// Every field on the screen is drawn through this, so they share one grid
+// rather than each carrying its own offsets.
+static void drawPortalField(int16_t y, const char *caption,
+                            const char *value, uint16_t color) {
+  gfx->fillRect(0, y, 240, PORTAL_FIELD_H, BG_COLOR);
+  gfx->setTextSize(1);
+  gfx->setTextColor(LABEL_COLOR);
+  gfx->setCursor(LABEL_X, y);
+  gfx->print(caption);
+  gfx->setTextSize(2);
+  gfx->setTextColor(color);
+  gfx->setCursor(LABEL_X, y + PORTAL_VALUE_DY);
+  gfx->print(value);
+}
+
 void displayPortal(const char *apName, const char *deviceId) {
   screenLocked = true;
   screenUnlockAt = 0;
@@ -287,37 +323,14 @@ void displayPortal(const char *apName, const char *deviceId) {
 
   gfx->setTextColor(TITLE_COLOR);
   gfx->setTextSize(2);
-  gfx->setCursor(LABEL_X, 12);
+  gfx->setCursor(LABEL_X, 10);
   gfx->print("Setup mode");
 
-  gfx->setTextSize(1);
-  gfx->setTextColor(LABEL_COLOR);
-  gfx->setCursor(LABEL_X, 52);
-  gfx->print("Join this WiFi network:");
-  gfx->setTextSize(2);
-  gfx->setTextColor(COLOR_OK);
-  gfx->setCursor(LABEL_X, 68);
-  gfx->print(apName);
-
-  gfx->setTextSize(1);
-  gfx->setTextColor(LABEL_COLOR);
-  gfx->setCursor(LABEL_X, 104);
-  gfx->print("Then open:");
-  gfx->setTextSize(2);
-  gfx->setTextColor(VALUE_COLOR);
-  gfx->setCursor(LABEL_X, 120);
-  gfx->print("192.168.4.1");
-
-  gfx->setTextSize(1);
-  gfx->setTextColor(LABEL_COLOR);
-  gfx->setCursor(LABEL_X, 150);
-  gfx->print("Device ID:");
-  gfx->setTextSize(2);
-  gfx->setTextColor(VALUE_COLOR);
-  gfx->setCursor(LABEL_X, 164);
-  gfx->print(deviceId);
-
+  drawPortalField(PORTAL_ROW1, "Join this WiFi network:", apName,       COLOR_OK);
+  drawPortalField(PORTAL_ROW2, "Then open:",              "192.168.4.1", VALUE_COLOR);
+  drawPortalField(PORTAL_ROW3, "Device ID:",              deviceId,      VALUE_COLOR);
   displayPortalSensor("checking...", COLOR_INFO);
+
   drawStatus("Waiting for setup", COLOR_INFO);
 }
 
@@ -325,15 +338,7 @@ void displayPortal(const char *apName, const char *deviceId) {
 // is part of the setup view, not a reading painted over it.
 void displayPortalSensor(const char *msg, uint16_t color) {
   if (!screenLocked) return;          // only meaningful while setup owns the screen
-  gfx->fillRect(0, 190, 240, 20, BG_COLOR);
-  gfx->setTextSize(1);
-  gfx->setTextColor(LABEL_COLOR);
-  gfx->setCursor(LABEL_X, 192);
-  gfx->print("Sensor:");
-  gfx->setTextSize(2);
-  gfx->setTextColor(color);
-  gfx->setCursor(LABEL_X + 52, 190);
-  gfx->print(msg);
+  drawPortalField(PORTAL_ROW4, "BME680 sensor:", msg, color);
 }
 
 // Full-screen QR code, released automatically after showMs by displayTick().
@@ -393,6 +398,10 @@ void displayQr(const char *url, uint32_t showMs) {
 void displayResume() {
   screenLocked = false;
   screenUnlockAt = 0;
+  // Pick up a rotation chosen in the portal here rather than at the next boot:
+  // finishing setup is the moment a full redraw happens anyway, so the student
+  // sees the setting take effect instead of wondering whether it saved.
+  gfx->setRotation(settings.lcdRotation & 0x03);
   drawStaticUI();
   drawConnStatus();
 }
