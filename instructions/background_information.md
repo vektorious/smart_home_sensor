@@ -73,7 +73,7 @@ power-cycle.
 
 The ESP32 and the LCD backlight produce heat, which warms the BME680 above true room
 temperature. BSEC subtracts a fixed **temperature offset** to compensate (`TEMP_OFFSET_C` in
-`config.h`, `temperature_offset` in the ESPHome YAML). To calibrate it: let the device run
+the setup portal, `temperature_offset` in the ESPHome YAML). To calibrate it: let the device run
 20–30 minutes until the reported temperature plateaus, compare it to a real thermometer, and
 set the offset to the difference. The humidity reading is derived from temperature, so fixing
 the offset improves humidity too. This is also why an enclosure should give the sensor some
@@ -95,7 +95,7 @@ The loop is simple:
 3. **Publish** — at most every 30 seconds the readings are sent to Home Assistant.
 
 The code lives in `code/shs_modular/`. `shs_modular.ino` ties the modules together; everything
-you configure is in `config.h`.
+you configure is entered in the device's own setup portal — nothing is compiled in.
 
 ### Getting Data into Home Assistant — Two Paths
 

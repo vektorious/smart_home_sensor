@@ -1,0 +1,16 @@
+{
+  "name": "Smart Home Sensor — diy-sensor.org",
+  "version": "2.1.0",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C6",
+      "parts": [
+        {
+          "path": "firmware/shs-sensorboard.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

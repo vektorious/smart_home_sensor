@@ -30,28 +30,31 @@ A one-page summary. Full guide: [`../build_instructions.md`](../build_instructio
 
 ---
 
-## 3. Configure `code/shs_modular/config.h`
+## 3. Pick a build, then set up on the device
+
+The only compile-time choice — in `code/shs_modular/config.h`:
 
 ```c
-#define DEVICE_NAME  "Smart Home Sensor"
-#define DEVICE_ID    "shs-livingroom"   // unique: a-z 0-9 '-'
-#define MQTT_HOST    "192.168.1.10"
-#define MQTT_USER    "mqtt-user"
-#define MQTT_PASS    "mqtt-password"
-#define USE_DISPLAY  1
-#define USE_MQTT     1                  // 0 = display only, no network
+#define SHS_VARIANT  SHS_VARIANT_MQTT_HA      // Home Assistant over MQTT
+// SHS_VARIANT_SENSORBOARD  → diy-sensor.org      SHS_VARIANT_DISPLAY → no network
 ```
 
-Upload. First boot opens a Wi-Fi AP **`Smart Home Sensor-Setup`** — connect and enter Wi-Fi
-credentials. (Upload stuck? Hold BOOT while plugging in USB, release after 2 s.)
+Everything else (name, broker, keys, interval, temp offset) is entered **on the device**.
+
+Upload — or flash a prebuilt image from the [web flasher](../../web-flasher/). First boot
+opens the AP **`SHS-xxxxxxxx-Setup`** (no password) → browse to **`192.168.4.1`** → Configure
+WiFi → Setup → *Live readings & connection test* → **Send a test reading** → Finish.
+
+**Back into setup later: press RESET twice quickly.**
+(Upload stuck? Hold BOOT while plugging in USB, release after 2 s.)
 
 ---
 
 ## 4. Home Assistant — MQTT
 
 1. Install & start the **Mosquitto broker** add-on; add the **MQTT** integration.
-2. Make an MQTT user; put it in `config.h`; re-upload.
-3. Device **Smart Home Sensor** auto-appears under MQTT with entities: IAQ, IAQ Accuracy,
+2. Make an MQTT user; enter it in the device's setup portal (no re-upload).
+3. The device auto-appears under MQTT with entities: IAQ, IAQ Accuracy,
    CO₂ equivalent, Breath VOC equivalent, Temperature, Humidity, Pressure.
 
 ---

@@ -19,6 +19,11 @@ static Bsec2       envSensor;
 static Preferences prefs;
 static bool        bmeReady = false;
 
+// The most recent processed sample, kept so the setup portal's live page and
+// its "send test" button can report real values without waiting for the next
+// BSEC callback.
+static SensorPacket latest;
+
 static uint8_t  bsecState[BSEC_MAX_STATE_BLOB_SIZE];
 static uint32_t lastStateSave = 0;
 static int      lastSavedAccuracy = -1;
@@ -107,8 +112,13 @@ static void newDataCallback(const bme68xData data, const bsecOutputs outputs,
     }
   }
 
+  latest = p;
+
   displayUpdate(p);
-  mqttPublish(p);   // no-op / throttled internally when USE_MQTT handles it
+  // Both backends are throttled internally and stub out to nothing in the
+  // variants that don't use them, so the callback needs no branching.
+  mqttPublish(p);
+  sensorboardPublish(p);
 
   Serial.printf("IAQ=%.0f(a%u)  CO2=%.0fppm  VOC=%.2fppm  T=%.2fC  H=%.2f%%  P=%.2fhPa\n",
                 p.iaq, p.iaqAccuracy, p.co2, p.voc, p.temperature, p.humidity, p.pressure);
@@ -157,8 +167,9 @@ bool bme680Init() {
   }
   Serial.println("3.3 V LP config applied");
 
-  // Compensate for external board/LCD self-heating (see TEMP_OFFSET_C).
-  envSensor.setTemperatureOffset(TEMP_OFFSET_C);
+  // Compensate for external board/LCD self-heating (see settings.tempOffsetC,
+  // editable in the portal because the right value depends on the enclosure).
+  envSensor.setTemperatureOffset(settings.tempOffsetC);
 
   loadState();
 
@@ -179,6 +190,11 @@ bool bme680Init() {
   envSensor.attachCallback(newDataCallback);
   bmeReady = true;
   return true;
+}
+
+// The most recent processed sample (all-NAN until BSEC produces its first).
+SensorPacket sensorLatest() {
+  return latest;
 }
 
 // Drive BSEC. Call frequently from loop(); it samples when due (~3 s in LP)

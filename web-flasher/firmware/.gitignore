@@ -1,0 +1,4 @@
+# Firmware images are built artefacts and live on the gh-pages branch only —
+# a 4 MB binary per variant would bloat main's history for no benefit.
+# See ../README.md § Hosting.
+*.bin

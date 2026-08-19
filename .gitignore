@@ -1,8 +1,9 @@
 .obsidian
 .tmp/
 
-# Local credentials — copy config.example.h → config.h and fill in your values
-code/shs_modular/config.h
+# Workshop credentials — copy workshop_secrets.example.h → workshop_secrets.h
+# config.h itself carries no secrets and is committed.
+code/shs_modular/workshop_secrets.h
 
 # Arduino build artifacts
 build/
