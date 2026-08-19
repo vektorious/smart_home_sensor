@@ -16,29 +16,40 @@ connects to the board with four I2C jumper wires.
 
 **Hardware:** Waveshare **ESP32-C6-LCD-1.3** (ESP32-C6 + ST7789 240×240 IPS display) + BME680.
 
-## Two firmware variants (pick one)
+## One sketch, three images
 
-- **Main build — `code/shs_modular/`** (Arduino): WiFiManager + PubSubClient publishing to Home
-  Assistant via **MQTT auto-discovery**. Keeps the custom colour display UI. *Workshop default.*
-- **Alternative — `code/esphome/smart_home_sensor.yaml`** (ESPHome): native HA API, no broker.
-  Exposes the same metrics but only a minimal display. Not verified on hardware yet.
+`code/shs_modular/` builds three variants, selected by `SHS_VARIANT` in `config.h` (or
+`-DSHS_VARIANT=n` from the command line — see `web-flasher/build.sh`):
+
+| `SHS_VARIANT` | Value | Backend | Flags set |
+|---|---|---|---|
+| `SHS_VARIANT_MQTT_HA` | 1 | MQTT → Home Assistant | `USE_MQTT` |
+| `SHS_VARIANT_SENSORBOARD` | 2 | HTTPS → diy-sensor.org | `USE_SENSORBOARD` |
+| `SHS_VARIANT_DISPLAY` | 3 | none | neither |
+
+`USE_NETWORK` is the OR of the two — it gates `wifi.ino` and `portal.ino`.
+
+**Alternative — `code/esphome/smart_home_sensor.yaml`** (ESPHome): native HA API, no broker.
+Same metrics, minimal display. Not verified on hardware yet.
 
 `code/legacy/test_wv_display/` is the original pre-networking sketch (display + sensor only),
 kept for reference — it is the source the `display.ino` / `bme680.ino` modules were extracted
 from.
 
-## Build & Upload (main build)
+## Build & Upload
 
-Arduino IDE project — no Makefile.
+`web-flasher/build.sh` builds all three images with `arduino-cli` and drops merged binaries
+into `web-flasher/firmware/`; it also recreates the missing esp32c6 BSEC blob. For the IDE:
 
 1. Arduino IDE + esp32 board package (Espressif). Board: **ESP32C6 Dev Module**.
 2. Libraries: GFX Library for Arduino, BSEC2 Software Library, BME68x Sensor library,
    WiFiManager (tzapu), PubSubClient (Nick O'Leary).
+   Partition scheme: **Huge APP** — the default is too small for BSEC.
 3. **BSEC ESP32-C6 blob gotcha (critical):** the BSEC2 library ships no esp32c6 precompiled
    blob. The C6 is soft-float RISC-V (`rv32imac`), ABI-compatible with the C3 blob, so create
    it as a copy:
    ```bash
-   cd ~/Arduino/libraries/BSEC2_Software_Library/src
+   cd ~/Arduino/libraries/bsec2/src
    mkdir -p esp32c6 && cp esp32c3/libalgobsec.a esp32c6/libalgobsec.a
    ```
    A library update removes `esp32c6/` — recreate it if linking fails.
@@ -50,30 +61,49 @@ Arduino multi-file sketch: all `.ino` files are concatenated into one translatio
 functions/globals are mutually visible and prototypes are auto-generated. `config.h` is the
 single include shared by every module.
 
-**Feature flags** in `config.h`:
-```c
-#define USE_DISPLAY 1   // ST7789 UI
-#define USE_MQTT    1   // Wi-Fi + MQTT to Home Assistant (0 = standalone display)
-```
+**Configuration is runtime, not compile-time.** `config.h` holds only the pin map, the
+variant, and `DEFAULT_*` factory values — no credentials, so it is committed. Per-device
+values live in NVS (`settings.ino`, namespace `shs`, versioned) and are edited from the setup
+portal. Workshop credentials go in the gitignored `workshop_secrets.h`, pulled in via
+`__has_include` so a build without it still compiles.
 
-**Flow** (`shs_modular.ino`): `setup()` → `displayInit()` → `bme680Init()` → `wifiConnect()` →
-`mqttConnect()`; `loop()` → `bme680Run()` + `mqttLoop()`. BSEC samples every ~3 s in LP mode
-and fires `newDataCallback`, which fills a `SensorPacket` and calls `displayUpdate()` +
-`mqttPublish()`.
+**Device identity is derived, never stored:** `deviceId` = `shs-<mac8>` from the efuse MAC,
+`writeKey` = HMAC-SHA256(`WORKSHOP_KEY_SALT`, MAC) truncated to 32 hex chars, recomputed every
+boot. This survives a factory reset *and* a full flash erase — which matters because
+diy-sensor.org has no write-key recovery and never sweeps an API-key device, so a lost key
+would orphan that device ID permanently. Unsalted builds fall back to a random key in NVS.
+
+**Flow** (`shs_modular.ino`): `setup()` → `loadSettings()` → `displayInit()` →
+`detectDoubleReset()` → `bme680Init()` → `wifiConnect()` → [`runCommissioningPortal()` if
+double-reset or offline] → `mqttConnect()` / `sensorboardConnect()`; `loop()` → `bme680Run()`
++ `wifiLoop()` + `mqttLoop()` + `displayTick()`. BSEC samples every ~3 s in LP mode and fires
+`newDataCallback`, which fills a `SensorPacket` and calls `displayUpdate()`, `mqttPublish()`
+and `sensorboardPublish()` — the unused backends are compiled to no-ops, so the callback has
+no branching.
 
 | File | Responsibility |
 |------|----------------|
-| `config.example.h` | Committed template with placeholder credentials — students copy this to `config.h` |
-| `config.h` | Gitignored local copy with real credentials; identical structure to `config.example.h` |
+| `config.h` | Pins, `SHS_VARIANT`, `DEFAULT_*`, `Settings`/`SensorPacket` structs. Committed — no secrets |
+| `workshop_secrets.example.h` | Template for `workshop_secrets.h` (gitignored): API key, project, key salt |
 | `shs_modular.ino` | Entry point; wires modules together |
-| `display.ino` | ST7789 UI; stubbed out when `USE_DISPLAY 0` |
-| `bme680.ino` | BSEC2 init, `newDataCallback`, NVS state persistence, error handling |
-| `wifi.ino` | WiFiManager connect + `<DEVICE_NAME>-Setup` AP fallback |
-| `mqtt.ino` | PubSubClient; HA discovery configs + JSON state topic + LWT; stubbed when `USE_MQTT 0` |
+| `settings.ino` | NVS persistence, derived identity, the three reset actions |
+| `portal.ino` | WiFiManager portal: params per variant, live readings, send test, resets |
+| `resetdetect.ino` | Double-reset detection via an NVS flag + a 3 s window |
+| `display.ino` | ST7789 UI + `displayPortal()`; stubbed when `USE_DISPLAY 0` |
+| `bme680.ino` | BSEC2 init, `newDataCallback`, NVS state persistence, `sensorLatest()` |
+| `wifi.ino` | Station connect + backoff reconnect; stubbed when `USE_NETWORK 0` |
+| `mqtt.ino` | PubSubClient; discovery / flat / both modes; stubbed when `USE_MQTT 0` |
+| `sensorboard.ino` | HTTPS POST to diy-sensor.org; stubbed when `USE_SENSORBOARD 0` |
 | `utils.ino` | `isValidFloat()` |
 
-`SensorPacket` (in `config.h`) carries one reading from `bme680.ino` to both `display.ino` and
-`mqtt.ino`. Status colours (`COLOR_INFO/OK/WARN/ERR`) are defined in `config.h` — not
+**Arduino single-TU gotchas.** All `.ino` files concatenate into one translation unit, so a
+`static` global in two files is a redefinition (`Preferences prefs` was). Auto-generated
+prototypes are injected into the main sketch after *its* includes, so any signature naming a
+library type (`bsecOutputs`, `WiFiManagerParameter`) needs that header included in
+`shs_modular.ino` — otherwise it is prototyped against an unknown type.
+
+`SensorPacket` (in `config.h`) carries one reading from `bme680.ino` to `display.ino` and the
+backend modules; `sensorLatest()` re-exposes the most recent one to the portal. Status colours (`COLOR_INFO/OK/WARN/ERR`) are defined in `config.h` — not
 `display.ino` — so other modules can pass them even when the display is compiled out.
 
 ## Hardware notes
@@ -81,22 +111,32 @@ and fires `newDataCallback`, which fills a `SensorPacket` and calls `displayUpda
 - **Pins:** display SPI on GPIO5/6/7/14/15/21/22; BME680 I2C SDA=GPIO3, SCL=GPIO2. **Avoid
   GPIO16/17** (UART0 — bootloader chatter disturbs I2C).
 - **BME680 I2C address:** probes `0x76` then `0x77`.
-- **Self-heating:** `TEMP_OFFSET_C` (default 5.0 °C) compensates ESP32 + backlight heat. Final
-  value depends on the production enclosure — see TODO.
+- **Self-heating:** `settings.tempOffsetC` (default 5.0 °C, editable in the portal)
+  compensates ESP32 + backlight heat. Final default depends on the production enclosure —
+  see TODO.
 - **BSEC accuracy 0–3:** IAQ only trustworthy at 3; first calibration takes hours, 4-day window.
-  State saved to NVS and restored on boot.
+  State saved to NVS and restored on boot. The portal's *Clear IAQ calibration* is the only
+  action that discards it — deliberately not bundled into the factory reset, which costs
+  hours to undo.
 
 ## Home Assistant integration
 
-- **MQTT (main):** retained discovery configs to
-  `homeassistant/sensor/<DEVICE_ID>/<metric>/config`; readings as JSON to
-  `smart_home_sensor/<DEVICE_ID>/state`; availability via LWT on `.../status`. Needs the
-  Mosquitto broker + MQTT integration.
+- **MQTT (main):** `settings.mqttMode` picks the shape — `MQTT_MODE_DISCOVERY` (retained
+  configs to `<haDiscPrefix>/sensor/<deviceId>/<metric>/config` + JSON to
+  `<prefix>/<deviceId>/state`), `MQTT_MODE_FLAT` (one topic per metric), or `MQTT_MODE_BOTH`
+  (flat topics with discovery configs pointing at them). Availability via LWT on
+  `.../status`. Switching away from a discovery mode publishes empty retained configs to
+  clear the orphaned entities. Needs the Mosquitto broker + MQTT integration.
+- **diy-sensor.org (workshop):** one POST per reading to `settings.apiUrl`; `X-API-Key`
+  header, `write_key` in the body; server assigns timestamps (sending one is an error).
+  200 = appended, 201 = claimed the ID; 403 = the ID belongs to another write key.
 - **ESPHome (alt):** native API, auto-discovered, no broker.
 
 ## Documentation
 
 - `instructions/build_instructions.md` — student-facing build guide (start here).
+- `instructions/short_workshop.md` — 90-minute path: web flasher → setup portal → dashboard.
+- `web-flasher/README.md` — building/publishing images; the workshop-secrets caveat.
 - `instructions/background_information.md` — BME680/BSEC/IAQ theory, MQTT-vs-ESPHome, system path.
 - `instructions/quick_reference/quick_reference.md` — printable one-pager.
 - `TODO.md` — outstanding items (photos, enclosure, on-hardware verification, MQTT defaults).

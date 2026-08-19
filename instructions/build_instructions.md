@@ -15,6 +15,11 @@ Two firmware variants are covered:
 
 Do the wiring (§1–3) first; then pick **one** firmware path.
 
+> **In a hurry?** [`short_workshop.md`](short_workshop.md) does the whole thing in 90
+> minutes with a browser-based flasher and no toolchain at all, reporting to a shared
+> dashboard instead of Home Assistant. Come back here when you want to build from source
+> or keep the device on your own smart home.
+
 ---
 
 ## 1. Collect All Parts
@@ -101,8 +106,8 @@ Enclosure files and FreeCAD source: [`hardware/3d-print/`](../hardware/3d-print/
 4. Select **Tools ▸ Board ▸ ESP32 Arduino ▸ ESP32C6 Dev Module**.
 5. Set **Tools ▸ USB CDC On Boot ▸ Enabled**. The ESP32-C6 uses native USB — without this
    the Serial Monitor won't receive output during boot and the port may not appear reliably.
-6. Set **Tools ▸ Partition Scheme ▸ No OTA (2MB APP / 2MB SPIFFS)**. This gives the firmware
-   the full 2 MB it needs — the BSEC2 library is large and the default scheme is too small.
+6. Set **Tools ▸ Partition Scheme ▸ Huge APP (3MB No OTA/1MB SPIFFS)**. The BSEC2 library is
+   large and the default scheme is too small.
 
 ### 4.2 Install Required Libraries
 
@@ -144,25 +149,29 @@ create a folder named `esp32c6`, and copy `libalgobsec.a` from `esp32c3\` into i
 > If you ever get a **linker error** about `libalgobsec` after updating the library, the
 > update removed the `esp32c6/` folder — just re-run the copy above.
 
-### 4.4 Configure the Firmware
+### 4.4 Pick the Build Variant
 
-1. In the `code/shs_modular/` folder, copy `config.example.h` to `config.h`
-   (the file is gitignored so your credentials stay out of the repository).
-2. Open `code/shs_modular/shs_modular.ino` in the Arduino IDE (it opens all the `.ino`
-   modules as tabs).
-3. Open the **`config.h`** tab and set, near the top:
+**There is nothing to configure before uploading.** Device name, broker address, MQTT
+credentials, publish interval and temperature offset are *not* compiled in: the firmware
+stores them in the chip's flash and you enter them in a setup page the device serves over
+its own Wi-Fi access point (§4.6). That is deliberate — it means one build works on every
+board, which is what makes the [web flasher](../web-flasher/) possible.
+
+The one compile-time choice is **which backend this image talks to**. Open
+`code/shs_modular/shs_modular.ino` in the Arduino IDE (it opens all the `.ino` modules as
+tabs), switch to the **`config.h`** tab, and set:
 
 ```c
-#define DEVICE_NAME  "Smart Home Sensor"
-#define DEVICE_ID    "shs-livingroom"     // unique per device: a-z 0-9 '-'
-
-#define MQTT_HOST    "192.168.1.10"        // your broker (e.g. the HA host)
-#define MQTT_PORT    1883
-#define MQTT_USER    "mqtt-user"
-#define MQTT_PASS    "mqtt-password"
+#define SHS_VARIANT  SHS_VARIANT_MQTT_HA      // Home Assistant over MQTT  ← this section
+// #define SHS_VARIANT  SHS_VARIANT_SENSORBOARD  // diy-sensor.org over HTTPS
+// #define SHS_VARIANT  SHS_VARIANT_DISPLAY      // display + serial only, no networking
 ```
 
-4. Leave `USE_DISPLAY` and `USE_MQTT` at `1`. (Set `USE_MQTT 0` if you only want the display.)
+Leave it at `SHS_VARIANT_MQTT_HA` for this guide.
+
+The other values in `config.h` are the pin map and the *factory defaults* — what a device
+starts with on its very first boot, or after a factory reset. Change them only if you are
+producing many devices and want a different starting point.
 
 ### 4.5 Upload
 
@@ -176,16 +185,42 @@ create a folder named `esp32c6`, and copy `libalgobsec.a` from `esp32c3\` into i
 > 3. Plug back in while holding BOOT.
 > 4. Release after ~2 seconds, then retry Upload.
 
-### 4.6 Connect to Wi-Fi
+### 4.6 Set Up the Device
 
-The firmware uses WiFiManager. On first boot (or when no saved network is found):
+On first boot — and whenever it cannot reach a saved network — the device opens a setup
+portal. The display shows you what to join and where to go.
 
-1. The device starts a temporary access point named **`Smart Home Sensor-Setup`**.
-2. Connect to it from your phone or laptop — no password required.
-3. A configuration page opens automatically. Enter your Wi-Fi credentials.
-4. The device connects, saves the credentials, and starts measuring.
+1. The device starts an access point named **`SHS-xxxxxxxx-Setup`** (no password), where
+   `xxxxxxxx` is derived from the chip, so every board's is different.
+2. Join it from a phone or laptop. The setup page usually opens by itself; if not, browse
+   to **`192.168.4.1`**.
+3. **Configure WiFi** — pick your network and enter the password.
+4. **Setup** — enter your device name and the MQTT settings from §5:
 
-From the next boot onward it reconnects automatically.
+   | Field | Value |
+   |---|---|
+   | Device name | Whatever you want it called in Home Assistant |
+   | MQTT broker host | Your broker's IP or hostname, e.g. `192.168.1.10` |
+   | MQTT port | `1883` (or `8883` with TLS) |
+   | MQTT username / password | The broker account you created |
+   | Mode | `0` = HA auto-discovery (leave this) |
+   | Publish interval | Seconds between readings; `60` is a good default |
+   | Temperature offset | °C to subtract for self-heating; see §6 |
+
+5. **Live readings & connection test** — check the sensor values look sane, then press
+   **Send a test reading** to confirm the broker accepts the connection *before* you walk
+   away from the device.
+6. **Finish setup**.
+
+The portal closes on its own after 10 minutes if you don't.
+
+> **Getting back in later.** Press **RESET twice in quick succession** — the display tells
+> you when the window is open. This is how you change the broker address, move the device
+> to a new network, or recalibrate, without reflashing.
+
+> **The device ID** shown on the display and the setup page is derived from the chip and
+> never changes, even across a reflash or a factory reset. It is what keys the MQTT topics
+> and the Home Assistant entities, so re-flashing a board does not orphan its history.
 
 ---
 
@@ -198,18 +233,32 @@ so there is nothing to configure by hand in HA.
    (*Settings ▸ Add-ons ▸ Add-on Store*) and start it.
 2. Add the **MQTT integration** if it isn't already set up
    (*Settings ▸ Devices & Services ▸ Add Integration ▸ MQTT*).
-3. Create an MQTT user for the device (e.g. in the Mosquitto add-on config or a HA user) and
-   put those credentials in `config.h` (§4.4), then re-upload.
-4. Power the device. Within a few seconds it connects and a new device named
-   **Smart Home Sensor** appears under *Settings ▸ Devices & Services ▸ MQTT*, with entities:
-   IAQ, IAQ Accuracy, CO₂ equivalent, Breath VOC equivalent, Temperature, Humidity, Pressure.
+3. Create an MQTT user for the device (e.g. in the Mosquitto add-on config or a HA user).
+   You enter these in the setup portal (§4.6) — no re-upload needed.
+4. Power the device. Within a few seconds it connects and a new device with the name you
+   gave it appears under *Settings ▸ Devices & Services ▸ MQTT*, with entities: IAQ, IAQ
+   Accuracy, CO₂ equivalent, Breath VOC equivalent, Temperature, Humidity, Pressure.
 
-The device publishes readings every 30 s (`MQTT_PUBLISH_MS` in `config.h`).
+Readings are published at the interval set in the portal (60 s by default).
 
 > **Don't see it?** Open the **Serial Monitor** at **115200 baud** and watch for
 > `MQTT connecting... connected` and `MQTT discovery configs published`. If it says
-> `failed (rc=...)`, the broker host/credentials in `config.h` are wrong, or the MQTT user
-> lacks publish rights.
+> `failed (rc=...)`, the broker host or credentials are wrong, or the MQTT user lacks
+> publish rights — press RESET twice and correct them in the portal.
+
+### What the three MQTT modes do
+
+The portal's **Mode** field decides how readings reach the broker. Leave it at `0` unless
+you have a reason not to.
+
+| Mode | Publishes | Use when |
+|---|---|---|
+| `0` — discovery | Retained config per metric under `homeassistant/sensor/…`, readings as one JSON message to `<prefix>/<id>/state` | Home Assistant. Entities appear by themselves. |
+| `1` — flat | One plain topic per metric, `<prefix>/<id>/temperature` and so on | Node-RED, Grafana, or your own subscriber |
+| `2` — both | Flat topics, plus discovery configs pointing at them | You want both, e.g. HA *and* a script |
+
+An LWT on `<prefix>/<id>/status` marks the device unavailable if it drops off the network,
+so Home Assistant shows it as offline rather than showing a stale last value forever.
 
 ---
 
@@ -290,8 +339,15 @@ Expect a device at `0x76` (or `0x77`). Nothing found ⇒ a wiring/power problem.
 **IAQ stuck at "Stabilizing" / accuracy 0:** normal for the first minutes-to-hours. The gas
 sensor calibrates against changing air — open a window, breathe near it, then ventilate.
 
-**MQTT won't connect:** check `MQTT_HOST`/`MQTT_USER`/`MQTT_PASS` in `config.h`, that the
-Mosquitto add-on is running, and that the MQTT user may publish.
+**MQTT won't connect:** press RESET twice to reopen the setup portal and check the broker
+host, port and credentials; confirm the Mosquitto add-on is running and that the MQTT user
+may publish. The portal's **Send a test reading** button reports the failure directly.
+
+**Wrong settings and no way in:** press RESET twice within about three seconds — the display
+shows the window. The portal offers three separate resets: *Forget Wi-Fi network*, *Clear IAQ
+calibration*, and *Factory reset* (settings + Wi-Fi). None of them changes the device ID, and
+only the middle one discards the air-quality calibration — which takes hours to rebuild, so
+it is deliberately not bundled into the others.
 
 **Linker error mentioning `libalgobsec`:** the BSEC2 ESP32-C6 blob is missing — redo §4.3.
 
