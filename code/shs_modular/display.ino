@@ -149,6 +149,21 @@ static uint16_t co2Color(float co2) {
   return RGB565(0xEF, 0x47, 0x6F);                   // bad      - red
 }
 
+// While the setup portal owns the screen, readings must not paint over it. The
+// portal keeps BSEC running on purpose, so the callbacks continue to arrive;
+// they are dropped here rather than at the source, which keeps the sensor's
+// timing untouched and the suppression in one place.
+static bool portalOwnsScreen = false;
+
+// Footer writer used by the portal view itself, which must bypass the latch.
+static void drawStatus(const char *msg, uint16_t color) {
+  gfx->fillRect(0, FOOTER_Y - 2, 240, 24, BG_COLOR);
+  gfx->setTextSize(2);
+  gfx->setTextColor(color);
+  gfx->setCursor(LABEL_X, FOOTER_Y);
+  gfx->print(msg);
+}
+
 // ---- Public API (called from setup, bme680.ino, wifi.ino, mqtt.ino) --------
 
 void displayInit() {
@@ -160,15 +175,13 @@ void displayInit() {
 
 // Footer status line (e.g. "Stabilizing", "Calibrated", error messages).
 void displayStatus(const char *msg, uint16_t color) {
-  gfx->fillRect(0, FOOTER_Y - 2, 240, 24, BG_COLOR);
-  gfx->setTextSize(2);
-  gfx->setTextColor(color);
-  gfx->setCursor(LABEL_X, FOOTER_Y);
-  gfx->print(msg);
+  if (portalOwnsScreen) return;
+  drawStatus(msg, color);
 }
 
 // Map BSEC IAQ accuracy (0..3) to a short status string + color.
 void displayAccuracy(uint8_t accuracy) {
+  if (portalOwnsScreen) return;
   switch (accuracy) {
     case 0:  displayStatus("Stabilizing", COLOR_INFO); break;
     case 1:  displayStatus("Calibrating (1)", COLOR_WARN); break;
@@ -179,6 +192,7 @@ void displayAccuracy(uint8_t accuracy) {
 
 // Redraw all value rows from the latest packet.
 void displayUpdate(const SensorPacket &p) {
+  if (portalOwnsScreen) return;
   char buf[24];
   displayAccuracy(p.iaqAccuracy);
 
@@ -192,6 +206,7 @@ void displayUpdate(const SensorPacket &p) {
 
 // Show placeholder dashes when the sensor failed to initialise.
 void displayNoSensor() {
+  if (portalOwnsScreen) return;
   drawValue(ROW_IAQ,  "---",      LABEL_COLOR);
   drawValue(ROW_CO2,  "--- ppm",  LABEL_COLOR);
   drawValue(ROW_VOC,  "--- ppm",  LABEL_COLOR);
@@ -202,6 +217,7 @@ void displayNoSensor() {
 
 // Called after Wi-Fi connects or drops.
 void displaySetWifiStatus(bool connected) {
+  if (portalOwnsScreen) return;
   if (wifiOk == connected) return;
   wifiOk = connected;
   if (connected) blinkOn = true;
@@ -210,6 +226,7 @@ void displaySetWifiStatus(bool connected) {
 
 // Called after MQTT connects or disconnects.
 void displaySetMqttStatus(bool connected) {
+  if (portalOwnsScreen) return;
   if (mqttOk == connected) return;
   mqttOk = connected;
   drawConnStatus();
@@ -217,6 +234,7 @@ void displaySetMqttStatus(bool connected) {
 
 // Drive the WiFi blink animation. Call from loop() — no-op when Wi-Fi is up.
 void displayTick() {
+  if (portalOwnsScreen) return;
   if (wifiOk) return;
   uint32_t now = millis();
   if (now - lastBlink < 500) return;
@@ -229,6 +247,7 @@ void displayTick() {
 // things a student needs while the portal is open, and they are needed exactly
 // when the device has no other way to tell them — no network, no dashboard.
 void displayPortal(const char *apName, const char *deviceId) {
+  portalOwnsScreen = true;
   gfx->fillScreen(BG_COLOR);
   gfx->setTextWrap(false);
 
@@ -264,12 +283,14 @@ void displayPortal(const char *apName, const char *deviceId) {
   gfx->setCursor(LABEL_X, 172);
   gfx->print(deviceId);
 
-  displayStatus("Waiting for setup", COLOR_INFO);
+  drawStatus("Waiting for setup", COLOR_INFO);
 }
 
-// Leave the commissioning view and return to the readings layout.
+// Hand the screen back to the readings layout once setup is finished.
 void displayResume() {
+  portalOwnsScreen = false;
   drawStaticUI();
+  drawConnStatus();
 }
 
 #else  // ---- USE_DISPLAY == 0 : stub out the display API -------------------

@@ -34,9 +34,11 @@ static WiFiManagerParameter *p_deviceName;
 static WiFiManagerParameter *p_pubMin;
 static WiFiManagerParameter *p_tempOff;
 #if USE_SENSORBOARD
-static WiFiManagerParameter *p_project;
 static WiFiManagerParameter *p_apiUrl;
+#if !SHS_HAS_WORKSHOP_KEY
+static WiFiManagerParameter *p_project;
 static WiFiManagerParameter *p_apiKey;
+#endif
 #if !SHS_DERIVED_WRITE_KEY
 static WiFiManagerParameter *p_writeKey;
 #endif
@@ -77,11 +79,13 @@ static void saveParamsCallback() {
   settings.tempOffsetC = atof(p_tempOff->getValue());
 
 #if USE_SENSORBOARD
-  strlcpy(settings.project, p_project->getValue(), sizeof(settings.project));
   if (p_apiUrl->getValue()[0]) {
     strlcpy(settings.apiUrl, p_apiUrl->getValue(), sizeof(settings.apiUrl));
   }
+#if !SHS_HAS_WORKSHOP_KEY
+  strlcpy(settings.project, p_project->getValue(), sizeof(settings.project));
   strlcpy(settings.apiKey, p_apiKey->getValue(), sizeof(settings.apiKey));
+#endif
 #if !SHS_DERIVED_WRITE_KEY
   // Adopting a device ID claimed by an earlier build: pasting the key that owns
   // it is the only way back in, since the server has no recovery path. Blank
@@ -421,15 +425,17 @@ static void buildParameters() {
   wm.addParameter(p_tempOff);
 
 #if USE_SENSORBOARD
-  p_project = new WiFiManagerParameter("proj", "Project (dashboard group)",
-                                       settings.project, sizeof(settings.project) - 1);
   p_apiUrl  = new WiFiManagerParameter("aurl", "API URL",
                                        settings.apiUrl, sizeof(settings.apiUrl) - 1);
+  wm.addParameter(p_apiUrl);
+#if !SHS_HAS_WORKSHOP_KEY
+  p_project = new WiFiManagerParameter("proj", "Project (dashboard group)",
+                                       settings.project, sizeof(settings.project) - 1);
   p_apiKey  = new WiFiManagerParameter("akey", "API key (optional)",
                                        settings.apiKey, sizeof(settings.apiKey) - 1);
   wm.addParameter(p_project);
-  wm.addParameter(p_apiUrl);
   wm.addParameter(p_apiKey);
+#endif
 #if !SHS_DERIVED_WRITE_KEY
   p_writeKey = new WiFiManagerParameter("wkey",
       "Write key — blank keeps the current one; paste one to adopt an existing device ID",

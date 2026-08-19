@@ -91,6 +91,9 @@
 #endif
 #ifndef WORKSHOP_API_KEY
   #define WORKSHOP_API_KEY  ""
+  #define SHS_HAS_WORKSHOP_KEY  0
+#else
+  #define SHS_HAS_WORKSHOP_KEY  1
 #endif
 #ifndef WORKSHOP_PROJECT
   #define WORKSHOP_PROJECT  ""
@@ -194,14 +197,32 @@
 // ---------------------------------------------------------------------------
 //  Runtime settings — persisted in NVS, edited from the setup portal.
 //  Defined in settings.ino; loaded once at boot via loadSettings().
+//
+//  The string fields are fixed-size and filled with strlcpy, which truncates
+//  silently. A compiled-in credential that does not fit therefore produces a
+//  device that looks configured and is rejected by the server — so the sizes
+//  are named and checked below rather than left as literals in the struct.
 // ---------------------------------------------------------------------------
+#define SHS_PROJECT_LEN    48
+#define SHS_WRITE_KEY_LEN  40   // 32 hex chars + NUL
+#define SHS_API_URL_LEN   128
+#define SHS_API_KEY_LEN    96   // generous: keys are operator-chosen strings
+
+// Catch an oversized compiled-in default at build time instead of discovering
+// it as a 401 on the workshop floor. sizeof() on a string literal counts NUL.
+static_assert(sizeof(DEFAULT_API_KEY) <= SHS_API_KEY_LEN,
+              "WORKSHOP_API_KEY does not fit in Settings::apiKey — raise SHS_API_KEY_LEN");
+static_assert(sizeof(DEFAULT_PROJECT) <= SHS_PROJECT_LEN,
+              "WORKSHOP_PROJECT does not fit in Settings::project — raise SHS_PROJECT_LEN");
+static_assert(sizeof(DEFAULT_API_URL) <= SHS_API_URL_LEN,
+              "DEFAULT_API_URL does not fit in Settings::apiUrl — raise SHS_API_URL_LEN");
 struct Settings {
   char     deviceName[32];
   char     deviceId[32];          // derived from the MAC; not user-editable
-  char     project[48];           // dashboard grouping; empty = ungrouped
-  char     writeKey[40];          // 32 hex chars; derived or random (see settings.ino)
-  char     apiUrl[128];
-  char     apiKey[48];
+  char     project[SHS_PROJECT_LEN];
+  char     writeKey[SHS_WRITE_KEY_LEN];
+  char     apiUrl[SHS_API_URL_LEN];
+  char     apiKey[SHS_API_KEY_LEN];
   char     mqttHost[64];
   char     mqttUser[32];
   char     mqttPass[64];

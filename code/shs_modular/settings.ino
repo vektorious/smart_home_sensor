@@ -22,7 +22,7 @@ static Preferences settingsPrefs;
 
 static const char *NVS_NAMESPACE = "shs";
 // Bump when the Settings layout changes so stale flash is re-initialised.
-static const uint32_t SETTINGS_VERSION = 2;
+static const uint32_t SETTINGS_VERSION = 3;
 
 // ---------------------------------------------------------------------------
 //  Device identity — derived, never stored
@@ -172,6 +172,16 @@ void loadSettings() {
   // from someone else's NVS dump would otherwise publish under their ID.
   char uid[9];
   deriveIdentity(settings.deviceId, sizeof(settings.deviceId), uid, sizeof(uid));
+
+#if SHS_HAS_WORKSHOP_KEY
+  // Credentials compiled into the image are a property of the image, not a user
+  // setting, so they are reapplied rather than read from flash. Without this a
+  // board that ever ran a different build keeps that build's stored key: NVS
+  // survives re-flashing, and the settings version does not change when only
+  // the credentials do. That is a 401 with nothing on the device to explain it.
+  strlcpy(settings.apiKey,  DEFAULT_API_KEY, sizeof(settings.apiKey));
+  strlcpy(settings.project, DEFAULT_PROJECT, sizeof(settings.project));
+#endif
 
   // A salted build always re-derives; an unsalted one keeps whatever is stored,
   // and only mints a key if flash somehow came back empty.
