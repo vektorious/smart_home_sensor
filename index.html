@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Smart Home Sensor — Web Flasher</title>
+  <title>Smart Home Sensor Web Flasher</title>
   <script type="module"
           src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
   <style>
@@ -62,9 +62,9 @@
   </style>
 </head>
 <body>
-  <h1>Smart Home Sensor — Web Flasher</h1>
-  <p class="lead">Install the firmware onto your board straight from the browser —
-     no Arduino IDE, no drivers.</p>
+  <h1>Smart Home Sensor Web Flasher</h1>
+  <p class="lead">Install the firmware onto your board straight from the browser.
+     No Arduino IDE, no drivers.</p>
 
   <div class="card">
     <div class="picker">
@@ -81,7 +81,7 @@
         <input type="radio" name="fw" value="manifest-sensorboard.json">
         <span>
           <span class="t">diy-sensor.org</span><br>
-          <span class="d">The standard build. Same dashboard, no API key — your device claims
+          <span class="d">The standard build, publishing to the same dashboard. Your device claims
           its own ID and keeps its readings for 48 h after the last one. This image stays
           available indefinitely.</span>
         </span>
@@ -98,7 +98,7 @@
         <input type="radio" name="fw" value="manifest-display.json">
         <span>
           <span class="t">Display only</span><br>
-          <span class="d">No networking at all — readings on the screen and the serial
+          <span class="d">No networking at all. Readings appear on the screen and the serial
           console. Useful for checking the hardware before worrying about a network.</span>
         </span>
       </label>
@@ -106,13 +106,13 @@
 
     <div class="expiry">
       <strong>The European Impact Sprint image comes down on 26 August 2026</strong>, one week
-      after the workshop, and its key is withdrawn at the same time. Devices still running it
-      stop publishing then, and sprint readings are removed 48&nbsp;hours after a device's last
-      reading — nothing there is meant to be permanent.
+      after the workshop. Devices still running it stop publishing then, and sprint readings
+      are removed 48&nbsp;hours after a device's last reading. Nothing there is meant to be
+      permanent.
       <br><br>
-      Your board does not become useless: re-flash it with the
-      <strong>diy-sensor.org</strong> image above, which needs no key and stays on this page.
-      It publishes to the same dashboard under the same device ID.
+      Your board does not become useless. Re-flash it with the
+      <strong>diy-sensor.org</strong> image above, which stays on this page and publishes to
+      the same dashboard under the same device ID.
     </div>
 
     <div class="install">
@@ -137,7 +137,7 @@
       <li><strong>Plug in</strong> the USB-C cable while still holding BOOT.</li>
       <li><strong>Release BOOT</strong> after about 2 seconds.</li>
     </ol>
-    Use a USB-C <em>data</em> cable — a charge-only cable will never enumerate.
+    Use a USB-C <em>data</em> cable. A charge-only cable will never enumerate.
   </div>
 
   <h2>How to flash</h2>
@@ -148,7 +148,7 @@
     <li>Choose <strong>Install</strong> and wait for it to finish.</li>
     <li>The board reboots and opens a Wi-Fi access point named
         <code>&lt;device&gt;-Setup</code>. Join it, and the setup page opens at
-        <code>192.168.4.1</code> — the display shows both.</li>
+        <code>192.168.4.1</code>. The display shows both.</li>
     <li>Name your device, then use <strong>Send a test reading</strong> to confirm it reaches
         the dashboard before you walk away from it.</li>
   </ol>
@@ -161,7 +161,7 @@
   <h2>What each build reports</h2>
   <table>
     <tr><th>Metric</th><th>Notes</th></tr>
-    <tr><td>IAQ + accuracy</td><td>Index 0–500. Only trustworthy at accuracy 3 —
+    <tr><td>IAQ + accuracy</td><td>Index 0 to 500. Only trustworthy at accuracy 3;
         the first calibration takes hours.</td></tr>
     <tr><td>CO₂ equivalent</td><td>Estimated from VOC, not a real CO₂ measurement.</td></tr>
     <tr><td>Breath-VOC equivalent</td><td>ppm</td></tr>
@@ -176,7 +176,7 @@
 
 <script>
   // ESP Web Tools reads the manifest when the dialog opens, so swapping the
-  // attribute is enough — no need to re-create the button.
+  // attribute is enough, so there is no need to re-create the button.
   const installer = document.getElementById("installer");
   for (const radio of document.querySelectorAll('input[name="fw"]')) {
     radio.addEventListener("change", (e) => {
