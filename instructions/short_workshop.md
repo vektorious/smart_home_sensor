@@ -116,10 +116,10 @@ The device keeps publishing wherever it finds a Wi-Fi network it knows. Press RE
 twice to put your home network in.
 
 **The sprint firmware has an end date: 26 August 2026**, one week after the workshop.
-On that day the image comes off the flasher page and its key is withdrawn, so boards
-still running it stop publishing. Sprint readings are removed 48 hours after a
-device's last reading — nothing on that dashboard is meant to be permanent, and it is
-public while it lasts.
+On that day the image comes off the flasher page, so you can no longer install it.
+Whether boards already running it keep publishing after that is up to the organisers;
+either way the sprint dashboard is temporary and public, so treat its readings as
+disposable and move to one of the options below if you want to keep the device.
 
 Your board does not expire with it. Three ways on:
 
