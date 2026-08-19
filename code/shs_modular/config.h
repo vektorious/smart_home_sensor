@@ -114,12 +114,19 @@
 #define DEFAULT_MQTT_MODE    MQTT_MODE_DISCOVERY
 
 // ---------------------------------------------------------------------------
-//  Reporting cadence
+//  Reporting cadence, in MINUTES.
 //  BSEC produces a sample every ~3 s; publishing every one of them floods both
-//  backends. diy-sensor.org allows 12 writes/min per device on the anonymous
-//  policy, so 60 s leaves generous headroom.
+//  backends. Indoor air quality does not move fast enough to need more than a
+//  reading every few minutes, and the cost of a short interval is paid by the
+//  whole workshop at once: diy-sensor.org charges its write budget per
+//  credential and per stored value, so N devices sharing one API key spend
+//  N x (sensors per reading) / interval against the same bucket.
+//  The display still updates every ~3 s regardless — this is only the
+//  reporting rate.
 // ---------------------------------------------------------------------------
-#define DEFAULT_PUBLISH_INTERVAL_SEC  60
+#define DEFAULT_PUBLISH_INTERVAL_MIN  5
+#define MIN_PUBLISH_INTERVAL_MIN      1
+#define MAX_PUBLISH_INTERVAL_MIN      1440   // a day; beyond this it is a typo
 
 // ---------------------------------------------------------------------------
 //  Calibration defaults
@@ -188,7 +195,7 @@ struct Settings {
   uint16_t mqttPort;
   uint8_t  mqttMode;              // MQTT_MODE_*
   bool     mqttTls;
-  uint32_t publishIntervalSec;
+  uint32_t publishIntervalMin;
   float    tempOffsetC;
 };
 

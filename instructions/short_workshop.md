@@ -73,8 +73,10 @@ device just claimed its ID. Press **Finish setup**.
 Go to **`diy-sensor.org/dashboard/device/<your-device-id>`**, or find your device name in
 the workshop project your instructor will point you at.
 
-Readings arrive every 60 seconds. Charts need a few points before they look like
-anything, so give it a couple of minutes.
+Readings arrive every **5 minutes**, so the first chart takes a little patience — the
+display updates every few seconds regardless, which is where to look for an immediate
+reaction. You can shorten the interval in the setup page, but on a shared workshop key
+every device's readings come out of the same budget, so leave it unless you have a reason.
 
 ---
 

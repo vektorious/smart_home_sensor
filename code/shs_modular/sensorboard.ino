@@ -152,8 +152,8 @@ static void explainCode(int code) {
 // ---- Public API -----------------------------------------------------------
 
 void sensorboardConnect() {
-  Serial.printf("diy-sensor: publishing to %s as '%s' every %us\n",
-                settings.apiUrl, settings.deviceId, settings.publishIntervalSec);
+  Serial.printf("diy-sensor: publishing to %s as '%s' every %u min\n",
+                settings.apiUrl, settings.deviceId, settings.publishIntervalMin);
   if (settings.project[0]) Serial.printf("diy-sensor: project '%s'\n", settings.project);
   Serial.printf("diy-sensor: dashboard at %s%s\n", DASHBOARD_URL_PREFIX, settings.deviceId);
 }
@@ -181,12 +181,13 @@ int sensorboardSend(const SensorPacket &p) {
 }
 
 // Called from the BME680 callback on every new sample (~3 s); throttled to the
-// configured interval. The anonymous policy allows 12 writes/min per device, so
-// the 60 s default leaves generous headroom.
+// configured interval. The per-device limit is 12 writes/min, which the 5 min
+// default clears easily; the constraint that actually binds in a workshop is
+// the per-credential write budget, since every device shares one API key.
 void sensorboardPublish(const SensorPacket &p) {
   if (WiFi.status() != WL_CONNECTED) return;
   uint32_t now = millis();
-  if (lastSend != 0 && now - lastSend < settings.publishIntervalSec * 1000UL) return;
+  if (lastSend != 0 && now - lastSend < publishIntervalMs()) return;
   lastSend = now;
   sensorboardSend(p);
 }

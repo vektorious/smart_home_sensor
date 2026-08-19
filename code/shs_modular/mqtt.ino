@@ -236,7 +236,7 @@ void mqttLoop() {
 void mqttPublish(const SensorPacket &p) {
   if (!mqtt.connected()) return;
   uint32_t now = millis();
-  if (lastPublish != 0 && now - lastPublish < settings.publishIntervalSec * 1000UL) return;
+  if (lastPublish != 0 && now - lastPublish < publishIntervalMs()) return;
   lastPublish = now;
 
   if (modeUsesFlat()) publishFlat(p);

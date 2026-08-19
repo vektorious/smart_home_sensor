@@ -130,6 +130,11 @@ backend modules; `sensorLatest()` re-exposes the most recent one to the portal. 
 - **diy-sensor.org (workshop):** one POST per reading to `settings.apiUrl`; `X-API-Key`
   header, `write_key` in the body; server assigns timestamps (sending one is an error).
   200 = appended, 201 = claimed the ID; 403 = the ID belongs to another write key.
+  **Cadence is in minutes** (`settings.publishIntervalMin`, default 5, via
+  `publishIntervalMs()`). The binding server-side limit is not the per-device write rate
+  but the **per-credential write budget** — charged in stored values, not requests, and
+  shared by every device carrying the same workshop API key. N devices cost
+  N x sensors / interval against one bucket.
 - **ESPHome (alt):** native API, auto-discovered, no broker.
 
 ## Documentation

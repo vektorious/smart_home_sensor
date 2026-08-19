@@ -1,6 +1,6 @@
 {
   "name": "Smart Home Sensor — Workshop (diy-sensor.org)",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "new_install_prompt_erase": true,
   "builds": [
     {

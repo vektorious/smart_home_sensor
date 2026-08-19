@@ -22,7 +22,7 @@ static Preferences settingsPrefs;
 
 static const char *NVS_NAMESPACE = "shs";
 // Bump when the Settings layout changes so stale flash is re-initialised.
-static const uint32_t SETTINGS_VERSION = 1;
+static const uint32_t SETTINGS_VERSION = 2;
 
 // ---------------------------------------------------------------------------
 //  Device identity — derived, never stored
@@ -117,7 +117,7 @@ void resetSettingsToDefaults() {
   settings.mqttPort           = DEFAULT_MQTT_PORT;
   settings.mqttMode           = DEFAULT_MQTT_MODE;
   settings.mqttTls            = DEFAULT_MQTT_TLS;
-  settings.publishIntervalSec = DEFAULT_PUBLISH_INTERVAL_SEC;
+  settings.publishIntervalMin = DEFAULT_PUBLISH_INTERVAL_MIN;
   settings.tempOffsetC        = DEFAULT_TEMP_OFFSET_C;
 
   // Derived keys survive this reset unchanged; a random key is only minted if
@@ -155,7 +155,7 @@ void loadSettings() {
   settings.mqttPort           = settingsPrefs.getUShort("mqttPort", DEFAULT_MQTT_PORT);
   settings.mqttMode           = settingsPrefs.getUChar("mqttMode",  DEFAULT_MQTT_MODE);
   settings.mqttTls            = settingsPrefs.getBool("mqttTls",    DEFAULT_MQTT_TLS);
-  settings.publishIntervalSec = settingsPrefs.getUInt("pubSec",     DEFAULT_PUBLISH_INTERVAL_SEC);
+  settings.publishIntervalMin = settingsPrefs.getUInt("pubMin",     DEFAULT_PUBLISH_INTERVAL_MIN);
   settings.tempOffsetC        = settingsPrefs.getFloat("tempOff",   DEFAULT_TEMP_OFFSET_C);
   settingsPrefs.end();
 
@@ -190,7 +190,7 @@ void saveSettings() {
   settingsPrefs.putUShort("mqttPort",   settings.mqttPort);
   settingsPrefs.putUChar("mqttMode",    settings.mqttMode);
   settingsPrefs.putBool("mqttTls",      settings.mqttTls);
-  settingsPrefs.putUInt("pubSec",       settings.publishIntervalSec);
+  settingsPrefs.putUInt("pubMin",       settings.publishIntervalMin);
   settingsPrefs.putFloat("tempOff",     settings.tempOffsetC);
   settingsPrefs.putUInt("version",      SETTINGS_VERSION);
   settingsPrefs.end();

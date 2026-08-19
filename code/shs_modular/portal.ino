@@ -31,7 +31,7 @@ static volatile bool portalDone = false;
 
 // Custom parameters. Allocated once — the portal runs a single time per boot.
 static WiFiManagerParameter *p_deviceName;
-static WiFiManagerParameter *p_pubSec;
+static WiFiManagerParameter *p_pubMin;
 static WiFiManagerParameter *p_tempOff;
 #if USE_SENSORBOARD
 static WiFiManagerParameter *p_project;
@@ -67,8 +67,10 @@ static void saveParamsCallback() {
   if (p_deviceName->getValue()[0]) {
     strlcpy(settings.deviceName, p_deviceName->getValue(), sizeof(settings.deviceName));
   }
-  uint32_t pub = strtoul(p_pubSec->getValue(), nullptr, 10);
-  if (pub >= 5) settings.publishIntervalSec = pub;   // below 5 s nothing good happens
+  uint32_t pub = strtoul(p_pubMin->getValue(), nullptr, 10);
+  if (pub >= MIN_PUBLISH_INTERVAL_MIN && pub <= MAX_PUBLISH_INTERVAL_MIN) {
+    settings.publishIntervalMin = pub;
+  }
   settings.tempOffsetC = atof(p_tempOff->getValue());
 
 #if USE_SENSORBOARD
@@ -390,15 +392,15 @@ static String buildMenuHtml() {
 
 static void buildParameters() {
   static char pubBuf[12], tempBuf[12];
-  snprintf(pubBuf,  sizeof(pubBuf),  "%u", settings.publishIntervalSec);
+  snprintf(pubBuf,  sizeof(pubBuf),  "%u", settings.publishIntervalMin);
   snprintf(tempBuf, sizeof(tempBuf), "%.1f", settings.tempOffsetC);
 
   p_deviceName = new WiFiManagerParameter("dname", "Device name (shown on the dashboard)",
                                           settings.deviceName, sizeof(settings.deviceName) - 1);
-  p_pubSec     = new WiFiManagerParameter("pub", "Publish interval (s)", pubBuf, 11);
+  p_pubMin     = new WiFiManagerParameter("pub", "Publish interval (minutes)", pubBuf, 11);
   p_tempOff    = new WiFiManagerParameter("toff", "Temperature offset (°C)", tempBuf, 11);
   wm.addParameter(p_deviceName);
-  wm.addParameter(p_pubSec);
+  wm.addParameter(p_pubMin);
   wm.addParameter(p_tempOff);
 
 #if USE_SENSORBOARD

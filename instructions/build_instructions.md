@@ -204,7 +204,7 @@ portal. The display shows you what to join and where to go.
    | MQTT port | `1883` (or `8883` with TLS) |
    | MQTT username / password | The broker account you created |
    | Mode | `0` = HA auto-discovery (leave this) |
-   | Publish interval | Seconds between readings; `60` is a good default |
+   | Publish interval | **Minutes** between readings; `5` is the default |
    | Temperature offset | °C to subtract for self-heating; see §6 |
 
 5. **Live readings & connection test** — check the sensor values look sane, then press
@@ -239,7 +239,8 @@ so there is nothing to configure by hand in HA.
    gave it appears under *Settings ▸ Devices & Services ▸ MQTT*, with entities: IAQ, IAQ
    Accuracy, CO₂ equivalent, Breath VOC equivalent, Temperature, Humidity, Pressure.
 
-Readings are published at the interval set in the portal (60 s by default).
+Readings are published at the interval set in the portal — **5 minutes** by default. The
+display still refreshes every ~3 s; the interval only controls reporting.
 
 > **Don't see it?** Open the **Serial Monitor** at **115200 baud** and watch for
 > `MQTT connecting... connected` and `MQTT discovery configs published`. If it says
