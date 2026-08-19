@@ -102,7 +102,7 @@ static void drawStaticUI() {
   gfx->setTextColor(TITLE_COLOR);
   gfx->setTextSize(2);
   gfx->setCursor(LABEL_X, 8);
-  gfx->print(DEVICE_NAME);
+  gfx->print(settings.deviceName);
 
   // Connection status (clears x >= CONN_X and draws icons over any title overflow)
   drawConnStatus();
@@ -225,6 +225,53 @@ void displayTick() {
   drawConnStatus();
 }
 
+// Full-screen commissioning view. The AP name and the device ID are the two
+// things a student needs while the portal is open, and they are needed exactly
+// when the device has no other way to tell them — no network, no dashboard.
+void displayPortal(const char *apName, const char *deviceId) {
+  gfx->fillScreen(BG_COLOR);
+  gfx->setTextWrap(false);
+
+  gfx->setTextColor(TITLE_COLOR);
+  gfx->setTextSize(2);
+  gfx->setCursor(LABEL_X, 12);
+  gfx->print("Setup mode");
+
+  gfx->setTextSize(1);
+  gfx->setTextColor(LABEL_COLOR);
+  gfx->setCursor(LABEL_X, 52);
+  gfx->print("Join this WiFi network:");
+  gfx->setTextSize(2);
+  gfx->setTextColor(COLOR_OK);
+  gfx->setCursor(LABEL_X, 68);
+  gfx->print(apName);
+
+  gfx->setTextSize(1);
+  gfx->setTextColor(LABEL_COLOR);
+  gfx->setCursor(LABEL_X, 104);
+  gfx->print("Then open:");
+  gfx->setTextSize(2);
+  gfx->setTextColor(VALUE_COLOR);
+  gfx->setCursor(LABEL_X, 120);
+  gfx->print("192.168.4.1");
+
+  gfx->setTextSize(1);
+  gfx->setTextColor(LABEL_COLOR);
+  gfx->setCursor(LABEL_X, 156);
+  gfx->print("Device ID:");
+  gfx->setTextSize(2);
+  gfx->setTextColor(VALUE_COLOR);
+  gfx->setCursor(LABEL_X, 172);
+  gfx->print(deviceId);
+
+  displayStatus("Waiting for setup", COLOR_INFO);
+}
+
+// Leave the commissioning view and return to the readings layout.
+void displayResume() {
+  drawStaticUI();
+}
+
 #else  // ---- USE_DISPLAY == 0 : stub out the display API -------------------
 
 void displayInit() {}
@@ -235,5 +282,7 @@ void displayNoSensor() {}
 void displaySetWifiStatus(bool) {}
 void displaySetMqttStatus(bool) {}
 void displayTick() {}
+void displayPortal(const char *, const char *) {}
+void displayResume() {}
 
 #endif

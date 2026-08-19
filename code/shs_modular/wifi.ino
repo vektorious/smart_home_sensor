@@ -1,39 +1,108 @@
 // ============================================================================
-//  wifi.ino — Wi-Fi connection via WiFiManager
-//  On first boot (or when no saved network is found) the device starts a
-//  temporary access point "<DEVICE_NAME>-Setup"; connect to it to enter your
-//  Wi-Fi credentials. They are saved and reused on every later boot.
+//  wifi.ino — station connection using the credentials saved by the portal.
 //
-//  This is an always-on device (live display + multi-day BSEC calibration),
-//  so there is no deep sleep — Wi-Fi stays connected.
+//  This is an always-on device (live display + multi-day BSEC calibration), so
+//  there is no deep sleep: Wi-Fi stays associated and is re-established in the
+//  background if it drops. Commissioning itself lives in portal.ino.
 // ============================================================================
 #include "config.h"
 
-#if USE_MQTT
-#include <WiFiManager.h>   // tzapu
+#if USE_NETWORK
+#include <WiFi.h>
+#include <esp_wifi.h>
 
-void wifiConnect() {
-  WiFiManager wm;
-  wm.setConfigPortalTimeout(180);   // give up the portal after 3 min, then retry
+// A single association attempt gets this long. 10 s is too tight: a busy
+// 2.4 GHz AP plus a DHCP lease can easily exceed it.
+static const uint32_t WIFI_ATTEMPT_MS = 15000;
+static const uint8_t  WIFI_ATTEMPTS   = 2;
 
-  displayStatus("WiFi setup...", COLOR_INFO);
-  Serial.println("Connecting to Wi-Fi (WiFiManager)...");
+// Backoff between background reconnect attempts, so a router that is off
+// overnight does not mean a reconnect storm.
+static const uint32_t RECONNECT_MIN_MS = 5000;
+static const uint32_t RECONNECT_MAX_MS = 60000;
 
-  // Opens the "<DEVICE_NAME>-Setup" AP if no saved network connects.
-  if (!wm.autoConnect(DEVICE_NAME "-Setup")) {
-    Serial.println("Wi-Fi failed / portal timed out — restarting");
-    displayStatus("WiFi failed", COLOR_ERR);
-    delay(2000);
-    ESP.restart();
-  }
+static uint32_t nextReconnectAt = 0;
+static uint32_t reconnectDelay  = RECONNECT_MIN_MS;
 
-  Serial.print("Wi-Fi connected: ");
-  Serial.println(WiFi.localIP());
-  displaySetWifiStatus(true);
+// True when Wi-Fi credentials have been saved before (by the portal or a
+// previous session). Without them there is nothing to try and the caller
+// should go straight to commissioning.
+bool wifiHasCredentials() {
+  wifi_config_t conf;
+  if (esp_wifi_get_config(WIFI_IF_STA, &conf) != ESP_OK) return false;
+  return conf.sta.ssid[0] != '\0';
 }
 
-#else  // ---- USE_MQTT == 0 : no networking -------------------------------
+bool wifiConnect() {
+  WiFi.mode(WIFI_STA);
+  WiFi.setSleep(false);           // latency matters more than the µA here
+  WiFi.setAutoReconnect(true);
 
-void wifiConnect() {}
+  if (!wifiHasCredentials()) {
+    Serial.println("Wi-Fi: no saved credentials");
+    return false;
+  }
+
+  for (uint8_t attempt = 1; attempt <= WIFI_ATTEMPTS; attempt++) {
+    if (attempt > 1) {
+      WiFi.disconnect(true);      // a stuck association does not recover alone
+      delay(200);
+    }
+    WiFi.begin();                 // use the stored credentials
+
+    Serial.printf("Wi-Fi: connecting (attempt %u/%u)", attempt, WIFI_ATTEMPTS);
+    displayStatus("WiFi...", COLOR_INFO);
+    uint32_t started = millis();
+    while (millis() - started < WIFI_ATTEMPT_MS) {
+      if (WiFi.status() == WL_CONNECTED) {
+        Serial.printf("\nWi-Fi OK: %s  RSSI %d dBm\n",
+                      WiFi.localIP().toString().c_str(), WiFi.RSSI());
+        displaySetWifiStatus(true);
+        return true;
+      }
+      delay(250);
+      Serial.print(".");
+    }
+    Serial.printf("\nWi-Fi: attempt %u timed out\n", attempt);
+  }
+
+  Serial.println("Wi-Fi: not connected with saved credentials");
+  displaySetWifiStatus(false);
+  return false;
+}
+
+// Called from loop(). The ESP32 auto-reconnects on its own, but only while the
+// AP is reachable at the moment it tries; this covers the longer outages, with
+// an exponential backoff so we are not retrying every pass of the loop.
+void wifiLoop() {
+  bool connected = WiFi.status() == WL_CONNECTED;
+  displaySetWifiStatus(connected);
+
+  if (connected) {
+    reconnectDelay = RECONNECT_MIN_MS;
+    nextReconnectAt = 0;
+    return;
+  }
+  if (!wifiHasCredentials()) return;
+
+  uint32_t now = millis();
+  if (nextReconnectAt == 0) {
+    nextReconnectAt = now + reconnectDelay;
+    return;
+  }
+  if ((int32_t)(now - nextReconnectAt) < 0) return;
+
+  Serial.println("Wi-Fi: link lost — reconnecting");
+  WiFi.disconnect();
+  WiFi.begin();
+  reconnectDelay = min(reconnectDelay * 2, RECONNECT_MAX_MS);
+  nextReconnectAt = now + reconnectDelay;
+}
+
+#else  // ---- no networking in this variant ---------------------------------
+
+bool wifiHasCredentials() { return false; }
+bool wifiConnect()        { return false; }
+void wifiLoop()           {}
 
 #endif
