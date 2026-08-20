@@ -18,7 +18,3 @@ build/
 
 # local Claude Code settings
 .claude/settings.local.json
-
-# Load-test artefacts (generated per run)
-cleanup_loadtest-*.sh
-cleanup_smoketest-*.sh
