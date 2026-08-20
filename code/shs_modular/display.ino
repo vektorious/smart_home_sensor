@@ -5,6 +5,7 @@
 //  arrives (displayUpdate). All functions are no-ops when USE_DISPLAY is 0.
 // ============================================================================
 #include "config.h"
+#include <qrcode.h>   // Espressif QR encoder, bundled with the ESP32 core
 
 #if USE_DISPLAY
 #include <Arduino_GFX_Library.h>
@@ -14,11 +15,14 @@ static Arduino_DataBus *bus = new Arduino_ESP32SPI(
 
 // The ST7789 has a 240x320 internal framebuffer; rotations 2/3 need an 80px
 // row_offset2 to shift the visible window into the right region of that buffer.
+// It is passed unconditionally rather than only for the compiled-in rotation:
+// Arduino_TFT::setRotation() picks the right pair of offsets per rotation, so
+// supplying both is what lets the rotation change at runtime.
 static Arduino_GFX *gfx = new Arduino_ST7789(
-    bus, PIN_LCD_RST, LCD_ROTATION, true /* IPS */,
+    bus, PIN_LCD_RST, DEFAULT_LCD_ROTATION, true /* IPS */,
     240, 240,
     0, 0,
-    0, (LCD_ROTATION == 2 || LCD_ROTATION == 3) ? 80 : 0);
+    0, 80);
 
 #define BG_COLOR    RGB565(0x10, 0x18, 0x20)
 #define TITLE_COLOR RGB565(0xFF, 0xD1, 0x66)
@@ -27,6 +31,11 @@ static Arduino_GFX *gfx = new Arduino_ST7789(
 #define OK_COLOR    RGB565(0x06, 0xD6, 0xA0)
 #define WARN_COLOR  RGB565(0xFF, 0xD1, 0x66)
 #define ERR_COLOR   RGB565(0xEF, 0x47, 0x6F)
+// QR codes need a light background and dark modules; scanners cope badly with
+// the inverse, so this screen deliberately breaks the dark theme.
+#define WHITE_BG    0xFFFF
+#define QR_DARK     0x0000
+#define QR_TEXT     RGB565(0x33, 0x33, 0x33)
 
 // ---------- Display layout (240x240) ----------
 // Six value rows + a title/status header and a footer.
@@ -42,17 +51,33 @@ static Arduino_GFX *gfx = new Arduino_ST7789(
 #define ROW_PRES    188
 #define FOOTER_Y    216
 
-// Connection status area (top-right corner, x >= CONN_X)
-// Icon radius 14 matches textSize(2) height (16 px); cy=22 puts the top of the
-// icon at y=8, level with the device name.
-#define CONN_X      181     // left edge of WiFi + MQ area
-#define WIFI_CX     196     // WiFi icon centre x
-#define WIFI_CY      22     // WiFi icon centre y (dot); arcs open upward
-#define MQ_X        213     // "MQ" label x (textSize 2 → 24 px wide, ends at ~237)
-#define MQ_Y          8     // "MQ" label y — top-aligned with device name
+// ---------- Setup screen grid ----------
+// Four identical fields: an 8 px caption with a 16 px value 12 px below it,
+// on a 42 px pitch. Ends at 198, clear of the footer status line at 216.
+#define PORTAL_ROW1  44
+#define PORTAL_ROW2  86
+#define PORTAL_ROW3 128
+#define PORTAL_ROW4 170
+#define PORTAL_VALUE_DY 12
+#define PORTAL_FIELD_H  28
+
+// Connection status area (top-right corner, x >= CONN_X): [label][WiFi icon].
+// The label sits to the LEFT of the icon and is right-aligned against it, so a
+// two-character label ("MQ") and a three-character one ("API") both fit without
+// colliding with the icon or running off the 240 px edge. Icon radius 14
+// matches textSize(2) height (16 px); cy=22 puts its top at y=8, level with the
+// device name.
+#define WIFI_R       14
+#define WIFI_CX     221     // icon spans 207..235, leaving a 4 px right margin
+#define WIFI_CY      22
+#define ICON_LEFT   (WIFI_CX - WIFI_R)
+#define LABEL_GAP     6     // between label and icon
+#define CHAR_W2      12     // advance per char at textSize(2)
+#define CONN_X      160     // left edge of the reserved band (fits "API" + icon)
+#define MQ_Y          8     // label y — top-aligned with the device name
 
 static bool     wifiOk    = false;
-static bool     mqttOk    = false;
+static int8_t   linkState = -1;   // -1 not tried, 0 failed, 1 ok
 static bool     blinkOn   = true;
 static uint32_t lastBlink = 0;
 
@@ -63,7 +88,7 @@ static uint32_t lastBlink = 0;
 static void drawWifiIcon(uint16_t color) {
   // Build rings outside-in: fillCircle(BG) carves each gap, fillCircle(color)
   // restores the next ring. Result: rings at r 3-5, 7-9, 11-14; gaps at 1-3, 5-7, 9-11.
-  gfx->fillCircle(WIFI_CX, WIFI_CY, 14, color);
+  gfx->fillCircle(WIFI_CX, WIFI_CY, WIFI_R, color);
   gfx->fillCircle(WIFI_CX, WIFI_CY, 11, BG_COLOR);
   gfx->fillCircle(WIFI_CX, WIFI_CY,  9, color);
   gfx->fillCircle(WIFI_CX, WIFI_CY,  7, BG_COLOR);
@@ -79,7 +104,17 @@ static void drawWifiIcon(uint16_t color) {
   gfx->fillRect(cx-15, cy+1, 31, 15, BG_COLOR);                  // below dot
 }
 
-// Redraw the entire connection status corner (WiFi icon + MQ label).
+// Label for the backend indicator beside the WiFi icon. The display-only build
+// has no backend, so it gets no label at all rather than a permanently red one.
+#if USE_MQTT
+  #define LINK_LABEL "MQ"
+#elif USE_SENSORBOARD
+  #define LINK_LABEL "API"
+#else
+  #define LINK_LABEL nullptr
+#endif
+
+// Redraw the entire connection status corner (WiFi icon + backend label).
 static void drawConnStatus() {
   gfx->fillRect(CONN_X, 0, 240 - CONN_X, 32, BG_COLOR);
 
@@ -87,11 +122,19 @@ static void drawConnStatus() {
   if (wifiOk || blinkOn)
     drawWifiIcon(wifiOk ? OK_COLOR : ERR_COLOR);
 
-  // "MQ" label — textSize(2) matches the WiFi icon height
+  const char *label = LINK_LABEL;
+  if (!label) return;
+
+  // linkState is deliberately tri-state. The device only contacts the backend
+  // every few minutes, so a boolean would have to start as "failed" and sit
+  // there in red for the whole first interval, reporting a failure that has not
+  // happened. Grey means "not tried yet".
+  uint16_t color = linkState < 0 ? LABEL_COLOR : (linkState ? OK_COLOR : ERR_COLOR);
   gfx->setTextSize(2);
-  gfx->setTextColor(mqttOk ? OK_COLOR : ERR_COLOR);
-  gfx->setCursor(MQ_X, MQ_Y);
-  gfx->print("MQ");
+  gfx->setTextColor(color);
+  // Right-align against the icon, whatever the label's length.
+  gfx->setCursor(ICON_LEFT - LABEL_GAP - (int16_t)(strlen(label) * CHAR_W2), MQ_Y);
+  gfx->print(label);
 }
 
 static void drawStaticUI() {
@@ -153,7 +196,12 @@ static uint16_t co2Color(float co2) {
 // portal keeps BSEC running on purpose, so the callbacks continue to arrive;
 // they are dropped here rather than at the source, which keeps the sensor's
 // timing untouched and the suppression in one place.
-static bool portalOwnsScreen = false;
+// The portal and the QR screen both take the display over. The portal holds it
+// until setup finishes; the QR releases itself after a deadline. Readings are
+// dropped while either owns it, rather than pausing the sensor: the portal
+// keeps BSEC sampling on purpose, since its calibration clock must not stall.
+static bool     screenLocked  = false;
+static uint32_t screenUnlockAt = 0;   // 0 = held until released explicitly
 
 // Footer writer used by the portal view itself, which must bypass the latch.
 static void drawStatus(const char *msg, uint16_t color) {
@@ -170,18 +218,19 @@ void displayInit() {
   pinMode(PIN_BL, OUTPUT);
   digitalWrite(PIN_BL, HIGH);
   if (!gfx->begin()) Serial.println("gfx->begin() failed");
+  gfx->setRotation(settings.lcdRotation & 0x03);
   drawStaticUI();
 }
 
 // Footer status line (e.g. "Stabilizing", "Calibrated", error messages).
 void displayStatus(const char *msg, uint16_t color) {
-  if (portalOwnsScreen) return;
+  if (screenLocked) return;
   drawStatus(msg, color);
 }
 
 // Map BSEC IAQ accuracy (0..3) to a short status string + color.
 void displayAccuracy(uint8_t accuracy) {
-  if (portalOwnsScreen) return;
+  if (screenLocked) return;
   switch (accuracy) {
     case 0:  displayStatus("Stabilizing", COLOR_INFO); break;
     case 1:  displayStatus("Calibrating (1)", COLOR_WARN); break;
@@ -192,7 +241,7 @@ void displayAccuracy(uint8_t accuracy) {
 
 // Redraw all value rows from the latest packet.
 void displayUpdate(const SensorPacket &p) {
-  if (portalOwnsScreen) return;
+  if (screenLocked) return;
   char buf[24];
   displayAccuracy(p.iaqAccuracy);
 
@@ -206,7 +255,7 @@ void displayUpdate(const SensorPacket &p) {
 
 // Show placeholder dashes when the sensor failed to initialise.
 void displayNoSensor() {
-  if (portalOwnsScreen) return;
+  if (screenLocked) return;
   drawValue(ROW_IAQ,  "---",      LABEL_COLOR);
   drawValue(ROW_CO2,  "--- ppm",  LABEL_COLOR);
   drawValue(ROW_VOC,  "--- ppm",  LABEL_COLOR);
@@ -217,7 +266,7 @@ void displayNoSensor() {
 
 // Called after Wi-Fi connects or drops.
 void displaySetWifiStatus(bool connected) {
-  if (portalOwnsScreen) return;
+  if (screenLocked) return;
   if (wifiOk == connected) return;
   wifiOk = connected;
   if (connected) blinkOn = true;
@@ -226,15 +275,19 @@ void displaySetWifiStatus(bool connected) {
 
 // Called after MQTT connects or disconnects.
 void displaySetMqttStatus(bool connected) {
-  if (portalOwnsScreen) return;
-  if (mqttOk == connected) return;
-  mqttOk = connected;
+  int8_t next = connected ? 1 : 0;
+  if (next == linkState) return;
+  linkState = next;
+  if (screenLocked) return;
   drawConnStatus();
 }
 
 // Drive the WiFi blink animation. Call from loop() — no-op when Wi-Fi is up.
 void displayTick() {
-  if (portalOwnsScreen) return;
+  if (screenLocked) {
+    if (screenUnlockAt && (int32_t)(millis() - screenUnlockAt) >= 0) displayResume();
+    return;
+  }
   if (wifiOk) return;
   uint32_t now = millis();
   if (now - lastBlink < 500) return;
@@ -246,49 +299,109 @@ void displayTick() {
 // Full-screen commissioning view. The AP name and the device ID are the two
 // things a student needs while the portal is open, and they are needed exactly
 // when the device has no other way to tell them — no network, no dashboard.
+// One setup-screen field: a small caption with the value on the line below.
+// Every field on the screen is drawn through this, so they share one grid
+// rather than each carrying its own offsets.
+static void drawPortalField(int16_t y, const char *caption,
+                            const char *value, uint16_t color) {
+  gfx->fillRect(0, y, 240, PORTAL_FIELD_H, BG_COLOR);
+  gfx->setTextSize(1);
+  gfx->setTextColor(LABEL_COLOR);
+  gfx->setCursor(LABEL_X, y);
+  gfx->print(caption);
+  gfx->setTextSize(2);
+  gfx->setTextColor(color);
+  gfx->setCursor(LABEL_X, y + PORTAL_VALUE_DY);
+  gfx->print(value);
+}
+
 void displayPortal(const char *apName, const char *deviceId) {
-  portalOwnsScreen = true;
+  screenLocked = true;
+  screenUnlockAt = 0;
   gfx->fillScreen(BG_COLOR);
   gfx->setTextWrap(false);
 
   gfx->setTextColor(TITLE_COLOR);
   gfx->setTextSize(2);
-  gfx->setCursor(LABEL_X, 12);
+  gfx->setCursor(LABEL_X, 10);
   gfx->print("Setup mode");
 
-  gfx->setTextSize(1);
-  gfx->setTextColor(LABEL_COLOR);
-  gfx->setCursor(LABEL_X, 52);
-  gfx->print("Join this WiFi network:");
-  gfx->setTextSize(2);
-  gfx->setTextColor(COLOR_OK);
-  gfx->setCursor(LABEL_X, 68);
-  gfx->print(apName);
-
-  gfx->setTextSize(1);
-  gfx->setTextColor(LABEL_COLOR);
-  gfx->setCursor(LABEL_X, 104);
-  gfx->print("Then open:");
-  gfx->setTextSize(2);
-  gfx->setTextColor(VALUE_COLOR);
-  gfx->setCursor(LABEL_X, 120);
-  gfx->print("192.168.4.1");
-
-  gfx->setTextSize(1);
-  gfx->setTextColor(LABEL_COLOR);
-  gfx->setCursor(LABEL_X, 156);
-  gfx->print("Device ID:");
-  gfx->setTextSize(2);
-  gfx->setTextColor(VALUE_COLOR);
-  gfx->setCursor(LABEL_X, 172);
-  gfx->print(deviceId);
+  drawPortalField(PORTAL_ROW1, "Join this WiFi network:", apName,       COLOR_OK);
+  drawPortalField(PORTAL_ROW2, "Then open:",              "192.168.4.1", VALUE_COLOR);
+  drawPortalField(PORTAL_ROW3, "Device ID:",              deviceId,      VALUE_COLOR);
+  displayPortalSensor("checking...", COLOR_INFO);
 
   drawStatus("Waiting for setup", COLOR_INFO);
 }
 
+// Sensor line on the setup screen. Bypasses the overlay latch by design: this
+// is part of the setup view, not a reading painted over it.
+void displayPortalSensor(const char *msg, uint16_t color) {
+  if (!screenLocked) return;          // only meaningful while setup owns the screen
+  drawPortalField(PORTAL_ROW4, "BME680 sensor:", msg, color);
+}
+
+// Full-screen QR code, released automatically after showMs by displayTick().
+// Scanning it is the shortest path from a board on the table to that board's
+// dashboard on a phone; typing the device ID by hand is the alternative.
+// esp_qrcode_generate() hands the finished code to a plain function pointer
+// with no user context, so the rendering lives in this callback and needs
+// nothing but the handle.
+static void drawQrCallback(esp_qrcode_handle_t qr) {
+  int size = esp_qrcode_get_size(qr);
+  if (size <= 0) return;
+
+  gfx->fillScreen(WHITE_BG);   // scanners need a light quiet zone
+
+  const int16_t header = 22;
+  int16_t avail = 240 - header - 8;
+  int16_t scale = avail / size;          // whole pixels per module, or it blurs
+  if (scale < 1) return;
+  int16_t dim = size * scale;
+  int16_t ox  = (240 - dim) / 2;
+  int16_t oy  = header + (avail - dim) / 2;
+
+  gfx->setTextSize(1);
+  gfx->setTextColor(QR_TEXT);
+  gfx->setCursor(LABEL_X, 8);
+  gfx->print("Scan for your dashboard");
+
+  for (int y = 0; y < size; y++) {
+    for (int x = 0; x < size; x++) {
+      if (esp_qrcode_get_module(qr, x, y)) {
+        gfx->fillRect(ox + x * scale, oy + y * scale, scale, scale, QR_DARK);
+      }
+    }
+  }
+}
+
+void displayQr(const char *url, uint32_t showMs) {
+  screenLocked   = true;
+  screenUnlockAt = millis() + showMs;
+  if (screenUnlockAt == 0) screenUnlockAt = 1;   // 0 means "held indefinitely"
+
+  esp_qrcode_config_t cfg = {
+    .display_func       = drawQrCallback,
+    // Version 5 is 37x37 modules: 6 whole pixels each on a 240 px screen, and
+    // room for a dashboard URL. Higher versions scan worse at this size.
+    .max_qrcode_version = 5,
+    .qrcode_ecc_level   = ESP_QRCODE_ECC_LOW,
+  };
+  if (esp_qrcode_generate(&cfg, url) != ESP_OK) {
+    // Nothing to scan: fall back to the readings screen rather than a blank one.
+    Serial.println("QR generation failed");
+    displayResume();
+  }
+}
+
 // Hand the screen back to the readings layout once setup is finished.
 void displayResume() {
-  portalOwnsScreen = false;
+  screenLocked = false;
+  screenUnlockAt = 0;
+  // Pick up a rotation chosen in the portal here rather than at the next boot:
+  // finishing setup is the moment a full redraw happens anyway, so the student
+  // sees the setting take effect instead of wondering whether it saved.
+  gfx->setRotation(settings.lcdRotation & 0x03);
   drawStaticUI();
   drawConnStatus();
 }
@@ -304,6 +417,8 @@ void displaySetWifiStatus(bool) {}
 void displaySetMqttStatus(bool) {}
 void displayTick() {}
 void displayPortal(const char *, const char *) {}
+void displayPortalSensor(const char *, uint16_t) {}
+void displayQr(const char *, uint32_t) {}
 void displayResume() {}
 
 #endif

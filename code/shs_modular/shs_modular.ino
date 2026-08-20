@@ -26,10 +26,15 @@
 #include "config.h"
 // These headers must be visible before Arduino injects its auto-generated
 // prototypes: any function signature naming one of their types (bsecOutputs,
-// WiFiManagerParameter) is otherwise prototyped against an unknown type.
+// WiFiManagerParameter, esp_qrcode_handle_t) is otherwise prototyped against an
+// unknown type. The prototypes land at the top of the merged translation unit,
+// ahead of the include in the .ino that actually uses the type.
 #include <bsec2.h>
 #if USE_NETWORK
 #include <WiFiManager.h>
+#endif
+#if USE_DISPLAY
+#include <qrcode.h>   // Espressif QR encoder, bundled with the ESP32 core
 #endif
 
 void setup() {
@@ -64,15 +69,32 @@ void setup() {
   // Open the portal on a double reset, or whenever we cannot get online. Unlike
   // the battery-powered sister project there is no cost to being wrong here:
   // the device is on mains, and the portal keeps sampling BSEC while it waits.
+  bool wasCommissioned = false;
   if (doubleReset || !connected) {
     runCommissioningPortal();
     displayResume();
+    wasCommissioned = true;
     // Credentials may have just been entered — pick them up without a reboot.
     if (WiFi.status() != WL_CONNECTED) wifiConnect();
   }
 
   mqttConnect();
   sensorboardConnect();
+
+#if USE_SENSORBOARD
+  // Straight after setup, show where this board's readings will appear. A phone
+  // camera turns the device ID into a dashboard without anyone transcribing it,
+  // which is the step most likely to go wrong in a room of eighty boards.
+  // Released automatically, so the readings screen takes over on its own.
+  if (wasCommissioned) {
+    char url[128];
+    snprintf(url, sizeof(url), "%s%s", DASHBOARD_URL_FULL, settings.deviceId);
+    Serial.printf("Dashboard: %s\n", url);
+    displayQr(url, 20000);
+  }
+#else
+  (void)wasCommissioned;
+#endif
 #else
   (void)doubleReset;
   Serial.println("Display-only build — no networking");

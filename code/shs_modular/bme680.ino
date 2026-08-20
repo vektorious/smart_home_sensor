@@ -197,6 +197,13 @@ SensorPacket sensorLatest() {
   return latest;
 }
 
+// Whether init found the sensor and BSEC subscribed. False means bad wiring,
+// the wrong I2C address, or a dead chip — the thing the setup stage most needs
+// to surface, since everything else can look healthy without it.
+bool bme680Ok() {
+  return bmeReady;
+}
+
 // Drive BSEC. Call frequently from loop(); it samples when due (~3 s in LP)
 // and fires newDataCallback. Returns false only on a real (negative) error.
 void bme680Run() {

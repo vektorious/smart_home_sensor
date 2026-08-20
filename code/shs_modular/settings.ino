@@ -22,7 +22,7 @@ static Preferences settingsPrefs;
 
 static const char *NVS_NAMESPACE = "shs";
 // Bump when the Settings layout changes so stale flash is re-initialised.
-static const uint32_t SETTINGS_VERSION = 3;
+static const uint32_t SETTINGS_VERSION = 4;
 
 // ---------------------------------------------------------------------------
 //  Device identity — derived, never stored
@@ -128,6 +128,7 @@ void resetSettingsToDefaults() {
   settings.mqttTls            = DEFAULT_MQTT_TLS;
   settings.publishIntervalMin = DEFAULT_PUBLISH_INTERVAL_MIN;
   settings.tempOffsetC        = DEFAULT_TEMP_OFFSET_C;
+  settings.lcdRotation        = DEFAULT_LCD_ROTATION;
 
   // Derived keys survive this reset unchanged; a random key is only minted if
   // there is no salt to derive from and none has been stored yet.
@@ -166,6 +167,7 @@ void loadSettings() {
   settings.mqttTls            = settingsPrefs.getBool("mqttTls",    DEFAULT_MQTT_TLS);
   settings.publishIntervalMin = settingsPrefs.getUInt("pubMin",     DEFAULT_PUBLISH_INTERVAL_MIN);
   settings.tempOffsetC        = settingsPrefs.getFloat("tempOff",   DEFAULT_TEMP_OFFSET_C);
+  settings.lcdRotation        = settingsPrefs.getUChar("rot",       DEFAULT_LCD_ROTATION);
   settingsPrefs.end();
 
   // Identity is always recomputed, never trusted from flash: a board restored
@@ -211,6 +213,7 @@ void saveSettings() {
   settingsPrefs.putBool("mqttTls",      settings.mqttTls);
   settingsPrefs.putUInt("pubMin",       settings.publishIntervalMin);
   settingsPrefs.putFloat("tempOff",     settings.tempOffsetC);
+  settingsPrefs.putUChar("rot",         settings.lcdRotation);
   settingsPrefs.putUInt("version",      SETTINGS_VERSION);
   settingsPrefs.end();
 

@@ -121,6 +121,12 @@ In **Tools ▸ Manage Libraries**, search for and install:
 | WiFiManager | tzapu |
 | PubSubClient | Nick O'Leary |
 
+> **Do not install the Arduino "QRCode" library (ricmoo).** The ESP32 core already
+> ships Espressif's QR encoder, which the firmware uses for the dashboard QR code
+> shown after setup. Both headers are called `qrcode.h`, and the library shadows the
+> core one, so installing it breaks the build with `'esp_qrcode_handle_t' was not
+> declared`.
+
 ### 4.3 Add the ESP32-C6 BSEC Blob (important!)
 
 Bosch's `BSEC2` library ships precompiled algorithm blobs for several chips but, as of
@@ -206,6 +212,7 @@ portal. The display shows you what to join and where to go.
    | Mode | `0` = HA auto-discovery (leave this) |
    | Publish interval | **Minutes** between readings; `5` is the default |
    | Temperature offset | °C to subtract for self-heating; see §6 |
+   | Display rotation | 0–3 quarter turns, for however the enclosure sits |
 
 5. **Live readings & connection test** — check the sensor values look sane, then press
    **Send a test reading** to confirm the broker accepts the connection *before* you walk

@@ -33,6 +33,9 @@ static volatile bool portalDone = false;
 static WiFiManagerParameter *p_deviceName;
 static WiFiManagerParameter *p_pubMin;
 static WiFiManagerParameter *p_tempOff;
+#if USE_DISPLAY
+static WiFiManagerParameter *p_rotation;
+#endif
 #if USE_SENSORBOARD
 static WiFiManagerParameter *p_apiUrl;
 #if !SHS_HAS_WORKSHOP_KEY
@@ -77,6 +80,10 @@ static void saveParamsCallback() {
     settings.publishIntervalMin = pub;
   }
   settings.tempOffsetC = atof(p_tempOff->getValue());
+#if USE_DISPLAY
+  uint32_t rot = strtoul(p_rotation->getValue(), nullptr, 10);
+  if (rot <= 3) settings.lcdRotation = (uint8_t)rot;
+#endif
 
 #if USE_SENSORBOARD
   if (p_apiUrl->getValue()[0]) {
@@ -138,6 +145,7 @@ static String buildSensorJson() {
   appendFloat(j, "humidity",    d.humidity,    1);
   appendFloat(j, "pressure",    d.pressure,    1);
   j += "\"iaq_accuracy\":" + String(d.iaqAccuracy) + ",";
+  j += "\"sensor_ok\":" + String(bme680Ok() ? "true" : "false") + ",";
 
   bool connected = WiFi.status() == WL_CONNECTED;
   j += "\"wifi_connected\":" + String(connected ? "true" : "false") + ",";
@@ -180,6 +188,7 @@ static const char LIVE_PAGE[] PROGMEM = R"HTML(
        background:#2a2410;border:1px solid #5c4d1a;color:#e8d9a8}
 </style></head><body>
 <header>Live Readings <span id="wifi" class="wbadge err">WiFi: …</span></header>
+<div class="note" id="sensor" style="display:none"></div>
 <div class="grid" id="grid"></div>
 <div class="note" id="acc"></div>
 <div class="send">
@@ -214,6 +223,12 @@ function render(d){
  }
  document.getElementById("grid").innerHTML=h;
  document.getElementById("acc").textContent="IAQ accuracy "+(ACC[d.iaq_accuracy]||d.iaq_accuracy);
+ const sen=document.getElementById("sensor");
+ if(d.sensor_ok===false){
+  sen.style.display="";
+  sen.style.background="#3a1414";sen.style.borderColor="#7a2323";sen.style.color="#ffb4b4";
+  sen.textContent="BME680 not detected. Check the four wires: 3V3 (not 5V), GND, SDA to GPIO 3, SCL to GPIO 2. Press RESET after reseating them.";
+ } else { sen.style.display="none"; }
  document.getElementById("ka").checked=!!d.keep_awake;
  const w=document.getElementById("wifi");
  if(d.wifi_connected){w.className="wbadge ok";w.textContent="WiFi: "+(d.ssid||"connected")+" · "+d.ip;}
@@ -289,6 +304,23 @@ static String sendTestJson() {
 
   return String("{\"ok\":") + (ok ? "true" : "false") +
          ",\"msg\":\"" + msg + "\"}";
+}
+
+// Sensor health as the setup stage can know it: found or not, then whether it
+// has actually produced a reading, then how far calibration has got.
+static void refreshSensorLine() {
+  if (!bme680Ok()) {
+    displayPortalSensor("NOT FOUND", COLOR_ERR);
+    return;
+  }
+  SensorPacket d = sensorLatest();
+  if (!isValidFloat(d.temperature)) {
+    displayPortalSensor("warming up", COLOR_WARN);
+    return;
+  }
+  char buf[16];
+  snprintf(buf, sizeof(buf), "OK  acc %u", d.iaqAccuracy);
+  displayPortalSensor(buf, COLOR_OK);
 }
 
 // --- Routes ------------------------------------------------------------------
@@ -423,6 +455,16 @@ static void buildParameters() {
   wm.addParameter(p_deviceName);
   wm.addParameter(p_pubMin);
   wm.addParameter(p_tempOff);
+#if USE_DISPLAY
+  static char rotBuf[4];
+  snprintf(rotBuf, sizeof(rotBuf), "%u", settings.lcdRotation);
+  // Applied when the portal closes, not on save: rotating a screen the student
+  // is still reading setup instructions from would be an odd thing to do.
+  p_rotation = new WiFiManagerParameter("rot",
+      "Display rotation: 0, 1 = 90&deg;, 2 = 180&deg;, 3 = 270&deg; (applied when setup finishes)",
+      rotBuf, 3);
+  wm.addParameter(p_rotation);
+#endif
 
 #if USE_SENSORBOARD
   p_apiUrl  = new WiFiManagerParameter("aurl", "API URL",
@@ -507,10 +549,18 @@ void runCommissioningPortal() {
   // Stay open (AP+STA) after Wi-Fi connects rather than exiting immediately, so
   // the student can watch live readings and run the send test over the real
   // connection. Exit on an explicit Finish, or on timeout.
+  refreshSensorLine();
+
   uint32_t start = millis();
+  uint32_t lastSensorLine = 0;
   while (true) {
     wm.process();
     bme680Run();          // keep BSEC sampling while the portal is open
+
+    if (millis() - lastSensorLine > 2000) {
+      lastSensorLine = millis();
+      refreshSensorLine();
+    }
 
     if (portalDone) {
       Serial.println("Portal: finished by user");
