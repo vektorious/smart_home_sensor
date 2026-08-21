@@ -1,0 +1,73 @@
+"""Embed the simplified ESP32-C6-LCD-1.3-M into SmartHomeCube.FCStd."""
+
+from pathlib import Path
+
+import FreeCAD as App
+import FreeCADGui as Gui
+
+
+ROOT = Path(__file__).resolve().parent
+CUBE_PATH = ROOT / "src/SmartHomeCube.FCStd"
+BOARD_PATH = ROOT / "src/ESP32-C6-LCD-1.3-M.FCStd"
+OUTPUT_PATH = Path("/tmp/SmartHomeCube-with-MCU.FCStd")
+
+cube = App.openDocument(str(CUBE_PATH))
+
+# Make the macro idempotent when rerun during placement iteration.
+existing = cube.getObject("MCU_Assembly")
+existing_placement = existing.Placement if existing is not None else None
+if existing is not None:
+    for child in list(existing.Group):
+        cube.removeObject(child.Name)
+    cube.removeObject(existing.Name)
+    cube.recompute()
+
+board = App.openDocument(str(BOARD_PATH))
+source_features = [obj for obj in board.Objects if obj.TypeId == "Part::Feature"]
+source_data = [
+    (obj.Name, obj.Label, obj.Shape.copy(), tuple(obj.RenderColor))
+    for obj in source_features
+]
+App.closeDocument(board.Name)
+App.setActiveDocument(cube.Name)
+
+assembly = cube.addObject("App::Part", "MCU_Assembly")
+assembly.Label = "ESP32-C6-LCD-1.3-M (adjust placement here)"
+assembly.addProperty("App::PropertyString", "SourceModel", "MCU Model")
+assembly.SourceModel = "Waveshare ESP32-C6-LCD-1.3-M, SKU 33644"
+assembly.addProperty("App::PropertyString", "OverallDimensions", "MCU Model")
+assembly.OverallDimensions = "26.25 x 30.00 x 8.95 mm"
+assembly.addProperty("App::PropertyString", "Accuracy", "MCU Model")
+assembly.Accuracy = "Simplified from official dimension drawing and product images"
+
+for name, label, shape, color in source_data:
+    obj = cube.addObject("Part::Feature", "MCU_" + name)
+    obj.Label = label
+    obj.Shape = shape
+    obj.addProperty("App::PropertyColor", "RenderColor", "Visualization")
+    obj.RenderColor = color
+    obj.ViewObject.ShapeColor = color
+    obj.ViewObject.LineColor = (0.12, 0.12, 0.12)
+    obj.ViewObject.DisplayMode = "Flat Lines"
+    obj.ViewObject.LineWidth = 0.7
+    assembly.addObject(obj)
+
+# Initial approximation only. Select MCU_Assembly and edit Data > Placement to
+# adjust the entire board while preserving all component-relative positions.
+assembly.Placement = App.Placement(
+    App.Vector(33.0, -27.0, 4.5),
+    App.Rotation(
+        App.Vector(0, 0, 1),
+        App.Vector(-1, 0, 0),
+        App.Vector(0, -1, 0),
+        "XYZ",
+    ),
+)
+if existing_placement is not None:
+    assembly.Placement = existing_placement
+
+cube.recompute()
+cube.saveAs(str(OUTPUT_PATH))
+App.closeDocument(cube.Name)
+Gui.getMainWindow().close()
+print(f"Created {OUTPUT_PATH}")
