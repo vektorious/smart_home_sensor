@@ -47,7 +47,7 @@ For any build:
 - A 2.4 GHz Wi-Fi network (the ESP32-C6 will not see a 5 GHz-only network)
 - A soldering iron, to solder the Dupont wires to the BME680 module (the only soldering in the build)
 
-For flashing from the browser, that is the whole list: the web flasher needs a browser that supports Web Serial (Chromium, Chrome, Edge, or Opera; not Firefox or Safari).
+For flashing from the browser, that is the whole list: the web flasher needs a browser that supports Web Serial (Chromium, a recent Firefox, Chrome, Edge, or Opera; not Safari).
 
 For the Home Assistant build, additionally:
 - A running Home Assistant instance (a Raspberry Pi, mini-PC, or VM is fine)

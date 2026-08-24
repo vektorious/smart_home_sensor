@@ -4,7 +4,7 @@ This is the standard build. You solder four wires to the BME680, plug it onto th
 
 **What you need:**
 
-The ESP board, the BME680, four Dupont wires, a USB-C data cable, a soldering iron, and a laptop running a browser that supports Web Serial: Chromium, Chrome, Edge, or Opera. Web Serial does not exist in Firefox or Safari, or on iPads.
+The ESP board, the BME680, four Dupont wires, a USB-C data cable, a soldering iron, and a laptop running a browser that supports Web Serial: Chromium, a recent Firefox, Chrome, Edge, or Opera. Older Firefox versions do not have it, and neither does Safari or anything on an iPad.
 
 ---
 

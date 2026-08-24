@@ -43,7 +43,7 @@ producing an anonymous binary that calls itself the workshop image.
 
 ## Requirements (for whoever is flashing)
 
-- A desktop browser with **Web Serial**: **Chromium**, Chrome, Edge, or Opera. It does not exist in Firefox or
+- A desktop browser with **Web Serial**: **Chromium**, a **recent Firefox**, Chrome, Edge, or Opera. It does not exist in older Firefox or
   Safari, or anywhere on iOS.
 - The page must be served over **HTTPS** (or `http://localhost`). Web Serial refuses
   to run on plain `http://`.

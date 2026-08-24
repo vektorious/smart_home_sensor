@@ -3,7 +3,7 @@
 <img src="../build_instructions_qr.png" alt="QR code linking to the full build instructions" width="120" align="right">
 **Full build instructions:** scan the QR code
 
-**Web flasher** (on a computer, in a browser with Web Serial: Chromium, Chrome, Edge, Opera):
+**Web flasher** (on a computer, in a browser with Web Serial: Chromium, a recent Firefox, Chrome, Edge, Opera):
 `alexanderkutschera.com/smart_home_sensor`
 
 ## 1. Wire the BME680
