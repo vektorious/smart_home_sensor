@@ -35,7 +35,18 @@ bool wifiHasCredentials() {
 
 bool wifiConnect() {
   WiFi.mode(WIFI_STA);
-  WiFi.setSleep(false);           // latency matters more than the µA here
+  // Modem sleep ON, which is the ESP32 default. It was disabled here for
+  // latency, which was the wrong trade for this device: the radio is a few
+  // centimetres from the temperature sensor inside a closed enclosure, and
+  // keeping its front-end powered between beacons dissipates a few hundred
+  // milliwatts continuously. That heat lands on the one measurement the device
+  // exists to report. The 5 °C self-heating offset was characterised on the
+  // pre-networking sketch (code/legacy/test_wv_display/), which had no radio at
+  // all; with sleep disabled the real figure was around 7.5 °C.
+  //
+  // Nothing here needs the latency it bought: readings go out every few minutes
+  // and the reconnect path in wifiLoop() covers a link that drops.
+  WiFi.setSleep(true);
   WiFi.setAutoReconnect(true);
 
   if (!wifiHasCredentials()) {

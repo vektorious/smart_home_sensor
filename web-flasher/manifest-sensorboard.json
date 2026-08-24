@@ -1,6 +1,6 @@
 {
   "name": "Smart Home Sensor — diy-sensor.org",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "new_install_prompt_erase": true,
   "builds": [
     {
