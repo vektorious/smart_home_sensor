@@ -66,7 +66,10 @@ WiFi → Setup → *Live readings & connection test* → **Send a test reading**
 
 IAQ accuracy: **0** stabilizing · **1–2** calibrating (hours) · **3** trusted. IAQ bands:
 0–50 good · 51–100 moderate · 101–150 light · 151–200 moderate · 201–300 heavy · 300+ severe.
-Set **Temperature offset** in the setup portal to (reported − real thermometer) after a 20–30 min warm-up.
+Temp offset: after a 20–30 min warm-up, **add** the leftover error to the offset already set
+(`new = current + (reported − real)`); the default is 5 °C, not 0.
+Accuracy dropping 3→2→1 is BSEC rebuilding its baseline after a change, a restart, or
+unchanging air. Normal; it climbs back.
 
 ---
 

@@ -91,8 +91,9 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
   climb, then fall back over a minute or two.
 - **Compare temperature** against a real thermometer. Yours will read high — the ESP32
   and the backlight warm the sensor board. The setup page has a **Temperature offset**
-  field to correct it: run the device 20–30 minutes, then set the offset to
-  (displayed − actual).
+  field to correct it. It already ships set to 5 °C, so **add** whatever error is
+  left to that number rather than replacing it: if the display still reads 2.5 °C
+  high, the offset becomes 7.5, not 2.5.
 - **Watch IAQ accuracy.** It starts at 0 and works up to 3. Until it reaches 3, the IAQ
   number is a placeholder — BSEC is still learning what clean air looks like in your room.
   Reaching 3 takes hours, and full convergence takes up to four days of running.
@@ -108,6 +109,7 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
 | Test says **✗ 403** | The device ID is already claimed with a different write key, which happens if this board previously ran another image. Tell your instructor: the ID needs freeing, or it frees itself 48 h after that device's last reading. |
 | Test says **✗ could not reach…** | The device is on Wi-Fi but has no internet. Captive-portal networks (hotel/campus guest Wi-Fi) will not work. |
 | Nothing on the dashboard | If you pressed **Send a test reading**, your data is already there: check the device ID in the URL character for character. If you did not, the next scheduled reading is up to 5 minutes away. |
+| **IAQ accuracy fell from 3 back to 1** | Normal. BSEC is rebuilding its baseline after a change in the air, a restart, or air that never varies. It climbs back on its own. |
 | **I need to change a setting** | Press **RESET twice quickly**. The display tells you when the window is open, then setup mode returns. |
 
 ---

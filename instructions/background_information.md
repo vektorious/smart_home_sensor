@@ -69,6 +69,39 @@ tuning here uses a **4-day** calibration window. The firmware saves the learned 
 ESP32's flash (NVS) and restores it on boot, so the device doesn't relearn from scratch every
 power-cycle.
 
+### Why accuracy falls back to 2 or 1
+
+The accuracy figure is not a score for the reading; it is BSEC's confidence in *its own
+baseline*. The BME680 does not measure VOCs absolutely. It measures a gas resistance that
+drifts with the sensor's age, its temperature, the humidity, and whatever it has been
+breathing, so BSEC continuously estimates what clean air looks like *for this sensor, right
+now* and expresses everything relative to that estimate.
+
+A drop from 3 to 2 to 1 therefore means the baseline no longer explains what the sensor is
+seeing, so BSEC has discarded part of it and is rebuilding. **It is a recalibration, not a
+regression**, and it is expected behaviour rather than a fault. Four things commonly cause it:
+
+- **The air or the location genuinely changed** — the device moved rooms, a window stood
+  open for hours, the heating season started.
+- **Too little variation.** The algorithm anchors itself on periodically seeing relatively
+  clean air. A sensor in constantly stuffy air, or in air that never changes at all, slowly
+  loses its reference and confidence decays.
+- **Humidity swings.** Gas resistance depends strongly on humidity. BSEC compensates, but a
+  large or fast swing widens its uncertainty.
+- **Restarts.** The calibrated state is written to NVS only once accuracy reaches 3, and
+  then at most every six hours (`STATE_SAVE_PERIOD_MS`). Reboot a few hours after the last
+  save and BSEC resumes from a slightly stale baseline, which it may then downgrade. A run
+  of reflashes and double-resets during setup is a common explanation.
+
+Occasional dips that recover to 3 within a few hours are normal. A device that keeps sagging
+to 1 for days in a stable room is worth investigating, and the **temperature offset** is the
+first suspect: humidity is derived from temperature and feeds the gas compensation, so an
+offset that is wrong by several degrees destabilises the baseline with a device-shaped error
+rather than a real one.
+
+In practice: trust IAQ at 3, treat it as indicative at 2, and at 0–1 ignore the absolute
+value while still watching which way it moves.
+
 ### Self-heating and the temperature offset
 
 The ESP32 and the LCD backlight produce heat, which warms the BME680 above true room
@@ -76,7 +109,15 @@ temperature. BSEC subtracts a fixed **temperature offset** to compensate (the *T
 field in the setup portal, `DEFAULT_TEMP_OFFSET_C` in `config.h` for the value a
 freshly flashed device starts with, `temperature_offset` in the ESPHome YAML). To calibrate it: let the device run
 20–30 minutes until the reported temperature plateaus, compare it to a real thermometer, and
-set the offset to the difference. The humidity reading is derived from temperature, so fixing
+**add** what is left over to the offset already in use —
+
+```text
+new offset = current offset + (reported − real thermometer)
+```
+
+Setting the offset *to* the difference is the easy mistake, and it undoes the correction
+you are measuring: a device shipping with a 5 °C offset that still reads 2.5 °C high needs
+7.5 °C, not 2.5 °C. The humidity reading is derived from temperature, so fixing
 the offset improves humidity too. This is also why an enclosure should give the sensor some
 airflow and keep it away from the warm side of the board.
 

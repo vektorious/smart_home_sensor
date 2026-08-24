@@ -152,10 +152,13 @@
 // ---------------------------------------------------------------------------
 //  Calibration defaults
 //  TEMP_OFFSET_C: self-heating from the ESP32 + backlight warms the BME680
-//  above true ambient. BSEC subtracts this fixed offset (°C). To calibrate:
-//  run the board ~20-30 min until the reported temperature plateaus, then set
-//  this to (reported - real thermometer). Editable in the portal, because the
-//  right value depends on the enclosure.
+//  above true ambient. BSEC subtracts this fixed offset (°C). To calibrate: run
+//  the board ~20-30 min until the reported temperature plateaus, then ADD the
+//  remaining error to the offset already in use:
+//      new offset = current offset + (reported - real thermometer)
+//  Setting it to the difference alone is the obvious mistake: with a non-zero
+//  offset already applied, that throws away the correction being measured.
+//  Editable in the portal, because the right value depends on the enclosure.
 //  STATE_SAVE_PERIOD_MS: how often the calibrated BSEC state is re-saved to NVS.
 // ---------------------------------------------------------------------------
 #define DEFAULT_TEMP_OFFSET_C  5.0f
