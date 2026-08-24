@@ -158,8 +158,8 @@ backend modules; `sensorLatest()` re-exposes the most recent one to the portal. 
 
 ## Documentation
 
-- `instructions/build_instructions.md` — student-facing build guide (start here).
-- `instructions/short_workshop.md` — 90-minute path: web flasher → setup portal → dashboard.
+- `instructions/build_instructions.md` — default student-facing build guide (start here): web flasher → setup portal → dashboard, ~90 min.
+- `instructions/build_instructions_extended.md` — Arduino toolchain path: build from source, BSEC blob, MQTT/Home Assistant, ESPHome.
 - `web-flasher/README.md` — building/publishing images; the workshop-secrets caveat.
 - `instructions/background_information.md` — BME680/BSEC/IAQ theory, MQTT-vs-ESPHome, system path.
 - `instructions/quick_reference/quick_reference.md` — printable one-pager.
