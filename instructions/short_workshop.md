@@ -61,8 +61,10 @@ Wi-Fi network name and an address.
    what everyone will see on the dashboard, so make it recognisable. Save.
 5. Open **Live readings & connection test** and press **Send a test reading**.
 
-A green **✓ 201 — reading stored** means you are done: 201 is the server telling you your
-device just claimed its ID. Press **Finish setup**.
+A green **✓ 201 — reading stored** means the server accepted your reading and the device
+is ready. Press **Finish setup**. (Press the button again and you will see **200** instead:
+201 means the device claimed its ID with that first reading, 200 that it added another.
+Both mean stored.)
 
 > Your **device ID** is printed on the display and on the setup page. It is derived from
 > the chip itself, so it never changes — even if you reflash the board.
@@ -103,9 +105,9 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
 |---|---|
 | Display says **BME68x err** | Wiring: 3V3 not 5V, SDA→GPIO 3, SCL→GPIO 2. Reseat the jumpers and press RESET. |
 | Never leaves **Setup mode** | Wrong Wi-Fi password, or a 5 GHz-only network. The ESP32-C6 is 2.4 GHz only. |
-| Test says **✗ 403** | The device ID belongs to a different write key — tell your instructor; the ID needs freeing. |
+| Test says **✗ 403** | The device ID is already claimed with a different write key, which happens if this board previously ran another image. Tell your instructor: the ID needs freeing, or it frees itself 48 h after that device's last reading. |
 | Test says **✗ could not reach…** | The device is on Wi-Fi but has no internet. Captive-portal networks (hotel/campus guest Wi-Fi) will not work. |
-| Nothing on the dashboard | Check the device ID in the URL character for character. Readings take up to a minute. |
+| Nothing on the dashboard | If you pressed **Send a test reading**, your data is already there: check the device ID in the URL character for character. If you did not, the next scheduled reading is up to 5 minutes away. |
 | **I need to change a setting** | Press **RESET twice quickly**. The display tells you when the window is open, then setup mode returns. |
 
 ---

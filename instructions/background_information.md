@@ -72,8 +72,9 @@ power-cycle.
 ### Self-heating and the temperature offset
 
 The ESP32 and the LCD backlight produce heat, which warms the BME680 above true room
-temperature. BSEC subtracts a fixed **temperature offset** to compensate (`TEMP_OFFSET_C` in
-the setup portal, `temperature_offset` in the ESPHome YAML). To calibrate it: let the device run
+temperature. BSEC subtracts a fixed **temperature offset** to compensate (the *Temperature offset*
+field in the setup portal, `DEFAULT_TEMP_OFFSET_C` in `config.h` for the value a
+freshly flashed device starts with, `temperature_offset` in the ESPHome YAML). To calibrate it: let the device run
 20–30 minutes until the reported temperature plateaus, compare it to a real thermometer, and
 set the offset to the difference. The humidity reading is derived from temperature, so fixing
 the offset improves humidity too. This is also why an enclosure should give the sensor some

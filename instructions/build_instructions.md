@@ -135,6 +135,10 @@ ABI-compatible with the ESP32-C3 blob, so you create the C6 folder as a copy of 
 
 Find your Arduino libraries folder for your OS, then run the commands below.
 
+> The folder is called `bsec2` here. Depending on how the library was installed it may
+> instead be named `BSEC2_Software_Library` — use whichever one exists; the `src/`
+> layout inside is the same.
+
 **Linux** — `~/Arduino/libraries/`
 ```bash
 cd ~/Arduino/libraries/bsec2/src
@@ -213,6 +217,10 @@ portal. The display shows you what to join and where to go.
    | Publish interval | **Minutes** between readings; `5` is the default |
    | Temperature offset | °C to subtract for self-heating; see §6 |
    | Display rotation | 0–3 quarter turns, for however the enclosure sits |
+
+   The portal also shows **Topic prefix**, **HA discovery prefix** and **Use TLS**.
+   Leave all three alone unless you know you need them: the defaults are what the
+   Home Assistant MQTT integration expects.
 
 5. **Live readings & connection test** — check the sensor values look sane, then press
    **Send a test reading** to confirm the broker accepts the connection *before* you walk

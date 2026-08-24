@@ -39,7 +39,9 @@ The only compile-time choice — in `code/shs_modular/config.h`:
 // SHS_VARIANT_SENSORBOARD  → diy-sensor.org      SHS_VARIANT_DISPLAY → no network
 ```
 
-Everything else (name, broker, keys, interval, temp offset) is entered **on the device**.
+Everything else is entered **on the device**: name, interval, temp offset, display
+rotation, plus MQTT broker and credentials (HA build) or API URL and key
+(diy-sensor build).
 
 Upload — or flash a prebuilt image from the [web flasher](../../web-flasher/). First boot
 opens the AP **`SHS-xxxxxxxx-Setup`** (no password) → browse to **`192.168.4.1`** → Configure
@@ -63,7 +65,7 @@ WiFi → Setup → *Live readings & connection test* → **Send a test reading**
 
 IAQ accuracy: **0** stabilizing · **1–2** calibrating (hours) · **3** trusted. IAQ bands:
 0–50 good · 51–100 moderate · 101–150 light · 151–200 moderate · 201–300 heavy · 300+ severe.
-Set `TEMP_OFFSET_C` to (reported − real thermometer) after a 20–30 min warm-up.
+Set **Temperature offset** in the setup portal to (reported − real thermometer) after a 20–30 min warm-up.
 
 ---
 
