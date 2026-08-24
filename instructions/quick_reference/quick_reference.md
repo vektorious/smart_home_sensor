@@ -23,9 +23,10 @@ A one-page summary. Full guide: [`../build_instructions.md`](../build_instructio
   WiFiManager (tzapu) · PubSubClient (Nick O'Leary).
 - **BSEC C6 blob (required):**
   ```bash
-  cd ~/Arduino/libraries/BSEC2_Software_Library/src
+  cd ~/Arduino/libraries/bsec2/src
   mkdir -p esp32c6 && cp esp32c3/libalgobsec.a esp32c6/libalgobsec.a
   ```
+  Folder named differently? Find the one holding `esp32c3/libalgobsec.a`.
   Re-run after any BSEC2 library update (fixes `libalgobsec` linker errors).
 
 ---

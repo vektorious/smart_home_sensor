@@ -136,8 +136,8 @@ ABI-compatible with the ESP32-C3 blob, so you create the C6 folder as a copy of 
 Find your Arduino libraries folder for your OS, then run the commands below.
 
 > The folder is called `bsec2` here. Depending on how the library was installed it may
-> instead be named `BSEC2_Software_Library` — use whichever one exists; the `src/`
-> layout inside is the same.
+> instead be named `BSEC2_Software_Library`; use whichever exists. If neither does,
+> search your libraries folder for the directory containing `esp32c3/libalgobsec.a`.
 
 **Linux** — `~/Arduino/libraries/`
 ```bash

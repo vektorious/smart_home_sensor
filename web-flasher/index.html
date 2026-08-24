@@ -107,14 +107,19 @@
     </div>
 
     <div class="expiry">
-      <strong>The European Impact Sprint image comes down on 26 August 2026</strong>, one week
+      <strong>The European Impact Sprint image comes down on 26 August 2026</strong>, the day
       after the workshop. You will not be able to install it from this page after that.
+      Boards already running it are unaffected and keep publishing.
       Readings last as long as the device keeps sending them: once a device stops, it and
       its history are removed from the dashboard 48&nbsp;hours later.
       <br><br>
       Your board keeps working. Re-flash it with the <strong>diy-sensor.org</strong> image
-      above, which stays on this page and publishes to the same dashboard under the same
-      device ID. Doing that before the date is the safe move.
+      above, which stays on this page and publishes to the same dashboard.
+      <br><br>
+      To keep the <em>same</em> device ID, copy the <strong>write key</strong> from your
+      setup page first, then paste it into the new firmware's <strong>Write key</strong>
+      field. Without it the device ID is still claimed by the old firmware's key and the
+      dashboard will reject the readings until that device expires.
     </div>
 
     <div class="install">

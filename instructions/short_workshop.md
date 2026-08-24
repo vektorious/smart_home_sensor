@@ -117,8 +117,10 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
 The device keeps publishing wherever it finds a Wi-Fi network it knows. Press RESET
 twice to put your home network in.
 
-**The sprint firmware has an end date: 26 August 2026**, one week after the workshop.
-On that day the image comes off the flasher page, so you can no longer install it.
+**The sprint firmware has an end date: 26 August 2026**, the day after the workshop.
+On that day the image comes off the flasher page, so you can no longer install it on
+another board. The board you flashed today is unaffected and keeps publishing, and you
+can still read its write key from the setup page at any time by pressing RESET twice.
 
 Your readings last exactly as long as your device keeps sending them. A device that
 stops publishing is removed 48 hours later, together with its history, and its device
