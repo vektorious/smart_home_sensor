@@ -4,8 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Smart Home Sensor Web Flasher</title>
-  <script type="module"
-          src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <!-- Served from this site, not a CDN: a page that fetches a script from
+       unpkg sends every visitor's IP address to a third party before they have
+       clicked anything. See vendor/README.md for how to update it. -->
+  <script type="module" src="./vendor/install-button.js"></script>
   <style>
     :root { color-scheme: light dark; }
     body {
