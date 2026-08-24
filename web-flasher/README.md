@@ -14,6 +14,7 @@ Arduino IDE and no drivers.
 | `manifest-ha.json` | Home Assistant over MQTT |
 | `manifest-display.json` | Display only, no networking |
 | `build.sh` | Builds all four images into `firmware/` |
+| `vendor/` | ESP Web Tools, served from this site rather than a CDN (see `vendor/README.md`) |
 | `firmware/*.bin` | Merged images (generated; gitignored on `main`) |
 
 ## The four images
@@ -143,6 +144,7 @@ the site lives on a dedicated `gh-pages` branch mirroring this folder at its roo
 ```
 gh-pages/
 ├── index.html
+├── vendor/                    # ESP Web Tools (26 files + LICENSE)
 ├── manifest-workshop.json
 ├── manifest-sensorboard.json
 ├── manifest-ha.json
@@ -161,6 +163,7 @@ The binaries live only on `gh-pages` — four 4 MB images per release would bloa
 ```bash
 git worktree add /tmp/ghpages gh-pages
 cp index.html manifest-*.json /tmp/ghpages/
+cp -r vendor /tmp/ghpages/
 cp firmware/*.bin /tmp/ghpages/firmware/
 # bump "version" in the manifests you changed
 git -C /tmp/ghpages commit -am "Update flasher firmware" && git -C /tmp/ghpages push
