@@ -163,4 +163,3 @@ backend modules; `sensorLatest()` re-exposes the most recent one to the portal. 
 - `web-flasher/README.md` — building/publishing images; the workshop-secrets caveat.
 - `instructions/background_information.md` — BME680/BSEC/IAQ theory, MQTT-vs-ESPHome, system path.
 - `instructions/quick_reference/quick_reference.md` — printable one-pager.
-- `TODO.md` — outstanding items (photos, enclosure, on-hardware verification, MQTT defaults).
