@@ -130,9 +130,15 @@ backend modules; `sensorLatest()` re-exposes the most recent one to the portal. 
 - **Pins:** display SPI on GPIO5/6/7/14/15/21/22; BME680 I2C SDA=GPIO3, SCL=GPIO2. **Avoid
   GPIO16/17** (UART0 — bootloader chatter disturbs I2C).
 - **BME680 I2C address:** probes `0x76` then `0x77`.
-- **Self-heating:** `settings.tempOffsetC` (default 5.0 °C, editable in the portal)
-  compensates ESP32 + backlight heat. Final default depends on the production enclosure —
-  see TODO.
+- **Self-heating:** `settings.tempOffsetC` (default `DEFAULT_TEMP_OFFSET_C` = 5.0 °C,
+  editable in the portal) compensates ESP32 + backlight heat. **The default is known to be
+  low.** It was characterised on `code/legacy/test_wv_display/`, which has no radio; a
+  networked board with Wi-Fi modem sleep disabled needed ~7.5 °C. Modem sleep is on again
+  (`wifi.ino`) so the true figure is somewhere between, unmeasured. Calibration adds the
+  remaining error to the offset in use — setting it *to* the difference discards the
+  correction being measured, which is the easy mistake and was wrong in four documents.
+  Radio power management is a thermal decision here, not a power one: the antenna sits
+  centimetres from the sensor whose reading is the product.
 - **BSEC accuracy 0–3:** IAQ only trustworthy at 3; first calibration takes hours, 4-day window.
   State saved to NVS and restored on boot. The portal's *Clear IAQ calibration* is the only
   action that discards it — deliberately not bundled into the factory reset, which costs
@@ -155,6 +161,34 @@ backend modules; `sensorLatest()` re-exposes the most recent one to the portal. 
   shared by every device carrying the same workshop API key. N devices cost
   N x sensors / interval against one bucket.
 - **ESPHome (alt):** native API, auto-discovered, no broker.
+
+## Workshop credentials and lifecycle
+
+`code/shs_modular/workshop_secrets.h` is gitignored and exists only on the maintainer's
+machine. It holds the API key, the dashboard project, and the salt from which every
+device's write key is derived. Losing it cannot be undone: the derivation is the only way
+back to those keys, and the device IDs they own can then only be freed server-side.
+`workshop_secrets.example.h` is the committed template.
+
+Building the keyed image requires that file; `build.sh workshop` refuses without it rather
+than emitting an anonymous binary that claims to be the workshop one. `build.sh
+sensorboard` forces the keyless build even when the file is present.
+
+An event image is temporary by design: it is withdrawn from the flasher on a stated date,
+and the page says so. See `TODO.md` for the current one and `web-flasher/README.md` for the
+retirement steps.
+
+## Field troubleshooting (what participants actually hit)
+
+| Symptom | Cause |
+|---|---|
+| Setup screen never leaves | Wrong password, or a 5 GHz-only network; the C6 is 2.4 GHz |
+| Send test `401` | Image and server key diverged. `static_assert`s in `config.h` catch an oversized key at build time — a 51-char key silently truncated into a 48-byte field caused this once |
+| Send test `403` | Device ID claimed under a different write key, i.e. the board previously ran another image. Frees itself 48 h after that device's last reading |
+| Send test cannot reach host | Captive-portal networks |
+| `BME68x err` on the display | Wiring: 3V3 not 5V, SDA=GPIO3, SCL=GPIO2 |
+| Needs to change a setting | RESET twice quickly; the display shows the window |
+| IAQ accuracy falls 3 → 1 | Normal BSEC baseline rebuild. See `background_information.md` |
 
 ## Documentation
 
