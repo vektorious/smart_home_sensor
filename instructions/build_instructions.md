@@ -31,7 +31,7 @@ The BME680 talks to the board over **I2C**: two data lines plus power and ground
 
 ![Four Dupont wires and the BME680 module before assembly](img/wires_bme_01.jpg)
 
-Cut one end off each Dupont wire and strip about 5 mm of insulation. Keep the female socket on the other end — that is the end that plugs onto the board's header pins.
+Cut one end off each Dupont wire and strip about 3 mm of insulation. Keep the female socket on the other end — that is the end that plugs onto the board's header pins.
 
 ![The four wires cut and stripped, ready to solder](img/wires_stripped_02.jpg)
 
@@ -76,7 +76,7 @@ Assemble from bottom to top:
 
 The two inlays are optional. In any case, put something insulating between the board and the sensor: the small piece of styrofoam the ESP32 board ships with does the job, so keep it when you unpack the board.
 
-**Board and lower inlay.** Drop the board into the main housing with the display facing the open front, and feed the sensor wires out past it. Lay the lower inlay on top of the board, then press board and inlay down together until they sit at the bottom of the housing. Leave the BME680 itself outside for now.
+**Board and lower inlay.** Drop the board into the main housing with the display facing the open front (the bottom), and feed the sensor wires out past it. Lay the lower inlay on top of the board, then press board and inlay down together until they sit at the bottom of the housing. Leave the BME680 itself outside for now.
 
 ![Lower inlay laid on top of the board, both still standing proud of the housing](img/lower_inlay_placed_07.jpg)
 
