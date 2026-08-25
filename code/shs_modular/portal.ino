@@ -41,6 +41,7 @@ static WiFiManagerParameter *p_tempOff;
 static WiFiManagerParameter *p_rotation;
 #endif
 #if USE_SENSORBOARD
+static WiFiManagerParameter *p_deviceId;
 static WiFiManagerParameter *p_apiUrl;
 #if !SHS_HAS_WORKSHOP_KEY
 static WiFiManagerParameter *p_project;
@@ -90,6 +91,15 @@ static void saveParamsCallback() {
 #endif
 
 #if USE_SENSORBOARD
+  // Device ID: blank returns to the ID derived from the board, anything else is
+  // normalised and taken as an override. Boards with a duplicated efuse MAC
+  // derive the same ID, and this is how the second one gets its own dashboard
+  // entry. An unusable entry is ignored rather than applied — settings.deviceId
+  // must never end up holding something the API will reject.
+  if (!setDeviceIdOverride(p_deviceId->getValue())) {
+    Serial.printf("Portal: device ID '%s' rejected, keeping %s\n",
+                  p_deviceId->getValue(), settings.deviceId);
+  }
   if (p_apiUrl->getValue()[0]) {
     strlcpy(settings.apiUrl, p_apiUrl->getValue(), sizeof(settings.apiUrl));
   }
@@ -440,7 +450,9 @@ static void bindCustomRoutes() {
     clearWiFiCredentials();
     sendSimplePage("Factory reset done",
                    "Settings are back to defaults and the network is forgotten. "
-                   "The device ID, its write key and the IAQ calibration are kept. "
+                   "The write key and the IAQ calibration are kept, and the device ID "
+                   "returns to the one derived from this board — if you set one by "
+                   "hand, enter it again in Setup to go back to it. "
                    "Rebooting…",
                    REBOOT_FOOTER);
     delay(800);
@@ -460,6 +472,11 @@ static String buildMenuHtml() {
        "<div style='font-size:1.5rem;font-weight:700;font-family:monospace;margin-top:4px;word-break:break-all'>"
        + String(settings.deviceId) + "</div>";
 #if USE_SENSORBOARD
+  if (settings.deviceIdOverride[0]) {
+    h += "<div style='font-size:.75rem;color:#7a6520;margin-top:4px'>"
+         "Set by hand in Setup — a factory reset returns to the ID derived from "
+         "the board.</div>";
+  }
   h += "<div style='font-size:.75rem;color:#666;margin-top:6px;word-break:break-all'>"
        DASHBOARD_URL_PREFIX + String(settings.deviceId) + "</div>";
 #endif
@@ -525,6 +542,14 @@ static void buildParameters() {
 #endif
 
 #if USE_SENSORBOARD
+  // Pre-filled with the override only: showing the derived ID here would make
+  // every save store it as an override, and the ID would then stop following
+  // the board across a re-flash.
+  p_deviceId = new WiFiManagerParameter("did",
+      "Device ID (blank = derived from this board; set one only if two boards share an ID)",
+      settings.deviceIdOverride, sizeof(settings.deviceIdOverride) - 1);
+  wm.addParameter(p_deviceId);
+
   p_apiUrl  = new WiFiManagerParameter("aurl", "API URL",
                                        settings.apiUrl, sizeof(settings.apiUrl) - 1);
   wm.addParameter(p_apiUrl);
