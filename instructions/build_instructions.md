@@ -29,7 +29,11 @@ The ESP board, the BME680, four Dupont wires, a USB-C data cable, a soldering ir
 
 The BME680 talks to the board over **I2C**: two data lines plus power and ground.
 
-![Four Dupont wires and the BME680 module before assembly](img/jumper_cable_01.jpeg)
+![Four Dupont wires and the BME680 module before assembly](img/wires_bme_01.jpg)
+
+Cut one end off each Dupont wire and strip about 5 mm of insulation. Keep the female socket on the other end — that is the end that plugs onto the board's header pins.
+
+![The four wires cut and stripped, ready to solder](img/wires_stripped_02.jpg)
 
 | BME680 pin | Board pin |
 | ---------- | --------- |
@@ -38,15 +42,21 @@ The BME680 talks to the board over **I2C**: two data lines plus power and ground
 | SDA        | GPIO 3    |
 | SCL        | GPIO 2    |
 
-Solder the four wires to the BME680's pads **from the back of the board**, the plain side without the components, so the wires leave the board behind it and stay clear of the sensor. Then plug the other ends onto the board's pins. Only the sensor side is soldered, so the sensor-to-board link stays removable and the board can be reused for something else later.
+Push each stripped end through its hole in the BME680's pad row **from the back**, the plain side without the components, and bend it flat against the labelled front so the wire runs **off the side edge of the module, in the plane of the board**. Soldering them this way keeps the wires out of the way of both the sensor and the enclosure — sticking straight up off either face, they fight the upper inlay when you seat the module later.
 
-![Dupont wires soldered onto the BME680 pin header](img/jumper_soldered_02.jpeg)
+![Stripped wire ends pushed through the pad holes and bent flat, before soldering](img/wires_through_pads_03.jpg)
+
+Solder each joint on that labelled side, then snip off anything sticking out past the pad.
+
+![The four wires soldered to the BME680 pads, wires leaving flat to the side](img/wires_soldered_04.jpg)
+
+![Side view of the soldered joints, showing the wires staying in the plane of the module](img/wires_soldered_side_05.jpg)
 
 Double-check 3V3, not 5V before plugging in the USB cable, and check SDA and SCL are not swapped. That is the single most common reason a board reports no sensor.
 
-![BME680 connected to the Waveshare board](img/sensor_attached_03.jpeg)
+Then push the four sockets onto the matching pins on the board. Only the sensor side is soldered, so the sensor-to-board link stays removable and the board can be reused for something else later.
 
-> ⚠️ **The wires go the other way round from what these two photos show.** Solder them from the **back** of the BME680, the plain side without the components, so they leave the board behind it. Soldered on the front as pictured, they cross the component face and get in the way of the sensor and of seating the board in the enclosure. The photos are being redone.
+![BME680 connected to the Waveshare board, which is resting on the open enclosure](img/board_in_housing_06.jpg)
 
 ---
 
@@ -61,30 +71,42 @@ Assemble from bottom to top:
 1. **Main housing**: the outer body.
 2. **ESP32-C6-LCD-1.3 board**: display facing the open front.
 3. **Lower inlay** *(optional)*: separates the board from the sensor above it.
-4. **Upper inlay** *(optional)*: holds the BME680 in place under the lid. See *Seating the sensor in the upper inlay* at the end of this section.
+4. **Upper inlay** *(optional)*: holds the BME680 under the lid.
 5. **Lid**: snaps on, but does not drop straight down. See *Closing the lid* below.
 
 The two inlays are optional. In any case, put something insulating between the board and the sensor: the small piece of styrofoam the ESP32 board ships with does the job, so keep it when you unpack the board.
 
-![ESP32 board seated in the enclosure body with the BME680 ready to fold in](img/esp_in_housing_04.jpeg)
+**Board and lower inlay.** Drop the board into the main housing with the display facing the open front, and feed the sensor wires out past it. Lay the lower inlay on top of the board, then press board and inlay down together until they sit at the bottom of the housing. Leave the BME680 itself outside for now.
 
-![BME680 resting on the heat-shield packing material inside the enclosure](img/sensor_heat_shield_05.jpeg)
+![Lower inlay laid on top of the board, both still standing proud of the housing](img/lower_inlay_placed_07.jpg)
 
-![Lid held at a slight angle, with its long tab about to slide into the rails in the main body](img/housing_lid_06.jpeg)
+![Board and lower inlay pressed further in, the sensor still hanging outside](img/lower_inlay_pressed_08.jpg)
+
+![Top view with board and lower inlay seated at the bottom, sensor still out](img/board_seated_top_09.jpg)
+
+**Sensor and upper inlay.** The BME680 drops into the recess in the upper inlay with its **component side facing up**, towards the lid grille, so the sensor breathes room air instead of the air trapped over the board. The wires leave through the side opening.
+
+![BME680 seated in the upper inlay, component side towards the lid, wires led out the side](img/sensor_in_upper_inlay_10.jpg)
+
+Lay the styrofoam over the back of the sensor. It fills the space between sensor and board and blocks the heat rising off the ESP32.
+
+![Styrofoam laid into the upper inlay behind the sensor as a heat shield](img/foam_in_upper_inlay_11.jpg)
+
+Now lower the whole upper inlay into the housing, tucking the slack wire in as you go, and press it down until it sits flush.
+
+![Upper inlay with sensor and foam going into the main housing](img/upper_inlay_into_housing_12.jpg)
+
+![Upper inlay seated, sensor facing up ready for the lid](img/upper_inlay_seated_13.jpg)
 
 **Closing the lid.** The lid does not press on from straight above. One edge carries a long tab, the opposite edge a short one, and they go in one after the other. Hold the lid at a slight angle, as in the photo, and slide the long tab into the two rails inside the main body. With that edge held in the rails, lower the other edge until the short tab snaps into its notch and the lid sits flush. To open it again, release the short tab first and then draw the long tab back out of the rails, rather than prying the lid straight up.
 
+![Lid held at an angle, its long tab going into the rails in the main body first](img/lid_angled_14.jpeg)
+
+![Lid closed flush, the BME680 visible through the grille](img/lid_closed_15.jpeg)
+
 Once closed, the BME680 sits directly beneath the lid grille, exposed to room air rather than to heat from the board.
 
-![Completed enclosure with lid closed](img/housing_lid_closed_07.jpeg)
-
-**Seating the sensor in the upper inlay.**
-
-The BME680 drops into the recess in the upper inlay with its component side facing up, towards the lid grille, so the sensor breathes room air instead of the air trapped over the board.
-
-![BME680 seated in the upper inlay, component side facing the lid and the wires led out through the side opening](img/sensor_inlay_placement_09.jpg)
-
-*(This inlay was printed in a different colour than the rest of the enclosure above.)*
+*(Some parts in these photos were printed in a different colour than the rest of the enclosure.)*
 
 Print files and FreeCAD source: [`hardware/3d-print/`](../hardware/3d-print/).
 
@@ -143,7 +165,7 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
 - **Compare temperature** against a real thermometer. Yours will read high: the ESP32 and the backlight warm the sensor board. The setup page has a **Temperature offset** field to correct it. It already defaults to 5 °C, so add whatever error is left to that number rather than replacing it. If the display still reads 2.5 °C high, the offset becomes 7.5, not 2.5.
 - **Watch IAQ accuracy.** It starts at 0 and works up to 3. Until it reaches 3, the IAQ number is a placeholder: BSEC is still learning what clean air looks like in your room. Reaching 3 takes hours, and full convergence takes up to four days of running.
 
-![Finished device showing live sensor readings, IAQ still stabilizing after first boot](img/final_08.jpeg)
+![Finished device showing live sensor readings, IAQ still stabilizing after first boot](img/final_16.jpeg)
 
 ---
 

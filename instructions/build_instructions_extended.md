@@ -162,7 +162,7 @@ The BME680's gas sensor needs to **self-calibrate** before IAQ is trustworthy. T
 
 Reaching accuracy 3 the first time can take a few hours of varied air; full calibration uses a 4-day window. The firmware saves the calibrated state to flash and restores it on boot, so it doesn't start from scratch every time. See [`background_information.md`](background_information.md) for what IAQ, CO₂-equivalent, and VOC actually mean.
 
-![Finished device showing live sensor readings — IAQ still stabilizing after first boot](img/final_08.jpeg)
+![Finished device showing live sensor readings — IAQ still stabilizing after first boot](img/final_16.jpeg)
 
 ---
 
