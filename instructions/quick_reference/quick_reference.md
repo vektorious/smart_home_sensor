@@ -8,7 +8,7 @@
 
 ## 1. Wire the BME680
 
-Solder from the **back** of the sensor board, so the wires leave it behind the components.
+Thread the stripped ends through the pad holes **from the plain back**, bend them flat against the labelled front and solder there — the wires must leave the module **sideways**, in the plane of the board.
 
 | BME680 | VCC | GND | SDA | SCL |
 |---|---|---|---|---|
