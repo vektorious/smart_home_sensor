@@ -58,8 +58,10 @@
 // ---------------------------------------------------------------------------
 //  Device identity defaults
 //  The device ID is derived from the factory-programmed MAC in efuse
-//  ("<prefix>-<mac8>"): unique per board, stable across reboots, reflashes and
-//  a factory reset, so a student's dashboard entry never moves. It is shown in
+//  ("<prefix>-<hash8>", the first 32 bits of SHA-256 over the full 48-bit MAC):
+//  unique per board, stable across reboots, reflashes and a factory reset, so a
+//  student's dashboard entry never moves. Hashing rather than truncating the MAC
+//  is what keeps the eight characters varied — see deriveIdentity(). It is shown in
 //  the portal but is deliberately not editable — the device NAME is what
 //  students personalise.
 // ---------------------------------------------------------------------------

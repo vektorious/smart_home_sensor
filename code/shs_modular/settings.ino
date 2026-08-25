@@ -44,11 +44,10 @@ static const uint32_t SETTINGS_VERSION = 4;
 //
 //  The salt ships inside a publicly downloadable workshop image, so it is not a
 //  secret. It is not quite a free pass either: the HMAC covers the full 48-bit
-//  MAC, while the public device ID carries only the low 32 (OUI + one NIC byte),
-//  leaving 65,536 candidates that can only be tested against the server one POST
-//  at a time. What defeats that entirely is proximity — the Wi-Fi station MAC is
-//  this same efuse MAC, broadcast in every frame, so anyone in radio range reads
-//  the derivation input directly.
+//  MAC, and the public device ID is a one-way hash of it, so the ID alone does
+//  not hand over the derivation input. What defeats that entirely is proximity —
+//  the Wi-Fi station MAC is this same efuse MAC, broadcast in every frame, so
+//  anyone in radio range reads the derivation input directly.
 //
 //  That is an accepted trade-off, not an oversight. The shared workshop API key
 //  sits in the same binary, so the write key was never the secret holding the
@@ -101,9 +100,36 @@ static void randomWriteKey(char *out, size_t outLen) {
 
 // Fill deviceId (and deviceName's suffix) from the MAC. Called on every boot,
 // not just on reset, so identity is correct even if NVS holds something stale.
+//
+// The suffix is the first 32 bits of SHA-256 over the *whole* 48-bit MAC, not
+// the low 32 bits of the MAC itself. Truncating the MAC keeps the Espressif OUI
+// and one NIC byte, so a workshop's worth of boards — same chip, often the same
+// production batch — share a long common prefix and differ only in the last two
+// hex digits, which is neither recognisable on a badge nor evenly spread. The
+// hash spreads all 48 bits across all 8 characters; every board still gets the
+// same ID on every boot, since the MAC is immutable.
 static void deriveIdentity(char *idOut, size_t idLen, char *uidOut, size_t uidLen) {
-  uint32_t uid = (uint32_t)ESP.getEfuseMac();   // lower 32 bits
-  snprintf(uidOut, uidLen, "%08x", uid);
+  uint8_t mac[6];
+  macToBytes(mac);
+
+  uint8_t digest[32];
+  const mbedtls_md_info_t *md = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+  mbedtls_md_context_t ctx;
+  mbedtls_md_init(&ctx);
+  bool ok = mbedtls_md_setup(&ctx, md, /* hmac */ 0) == 0 &&
+            mbedtls_md_starts(&ctx) == 0 &&
+            // Domain-separate from the write key, which HMACs the same bytes.
+            mbedtls_md_update(&ctx, (const uint8_t *)"shs-device-id", 13) == 0 &&
+            mbedtls_md_update(&ctx, mac, sizeof(mac)) == 0 &&
+            mbedtls_md_finish(&ctx, digest) == 0;
+  mbedtls_md_free(&ctx);
+
+  // Fall back to the raw MAC bytes rather than a constant: a hash failure must
+  // not give every board the same ID.
+  if (!ok) for (int i = 0; i < 4; i++) digest[i] = mac[i];
+
+  snprintf(uidOut, uidLen, "%02x%02x%02x%02x",
+           digest[0], digest[1], digest[2], digest[3]);
   snprintf(idOut, idLen, "%s-%s", DEFAULT_DEVICE_ID_PREFIX, uidOut);
 }
 

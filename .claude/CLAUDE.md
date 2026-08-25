@@ -80,9 +80,10 @@ values live in NVS (`settings.ino`, namespace `shs`, versioned) and are edited f
 portal. Workshop credentials go in the gitignored `workshop_secrets.h`, pulled in via
 `__has_include` so a build without it still compiles.
 
-**Device identity is derived, never stored:** `deviceId` = `shs-<mac8>` from the efuse MAC,
-`writeKey` = HMAC-SHA256(`WORKSHOP_KEY_SALT`, MAC) truncated to 32 hex chars, recomputed every
-boot. This survives a factory reset *and* a full flash erase — which matters because
+**Device identity is derived, never stored:** `deviceId` = `shs-<hash8>` (first 32 bits of
+SHA-256 over the full efuse MAC — truncating the MAC instead left every board sharing the OUI
+prefix), `writeKey` = HMAC-SHA256(`WORKSHOP_KEY_SALT`, MAC) truncated to 32 hex chars, both
+recomputed every boot. This survives a factory reset *and* a full flash erase — which matters because
 diy-sensor.org has no write-key recovery and never sweeps an API-key device, so a lost key
 would orphan that device ID permanently. Unsalted builds fall back to a random key in NVS.
 
@@ -133,6 +134,12 @@ backend modules; `sensorLatest()` re-exposes the most recent one to the portal. 
 - **Self-heating:** `settings.tempOffsetC` (default 5.0 °C, editable in the portal)
   compensates ESP32 + backlight heat. Final default depends on the production enclosure —
   see TODO.
+- **Enclosure blocks RESET (known issue, not yet fixed):** the current housing covers the
+  RESET button, so the documented double-reset route back into the portal means sliding the
+  board out. The button-free path — and what the docs now give alongside it — is that
+  `setup()` opens the portal whenever `wifiConnect()` fails at boot, so powering up away from
+  the saved network reaches setup mode too. A network lost *while running* does not reopen it
+  (`wifiLoop()` reconnects in the background). Fix belongs in the next case revision.
 - **BSEC accuracy 0–3:** IAQ only trustworthy at 3; first calibration takes hours, 4-day window.
   State saved to NVS and restored on boot. The portal's *Clear IAQ calibration* is the only
   action that discards it — deliberately not bundled into the factory reset, which costs

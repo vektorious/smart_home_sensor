@@ -13,6 +13,10 @@
 //    /clearcal    discard the BSEC calibration only
 //    /factory     settings back to defaults + forget the network
 //
+//  WiFiManager's own pages have no Back button (the flag that draws it is
+//  private), so PORTAL_HEAD injects one into every subpage, together with a note
+//  that a page served off the board takes a few seconds to appear.
+//
 //  The portal runs non-blocking so we can enforce our own timeout, keep driving
 //  BSEC while it is open (its 3 s cadence must not stall, or the calibration
 //  clock effectively stops), and let a "keep awake" toggle defeat the timeout
@@ -174,6 +178,8 @@ static const char LIVE_PAGE[] PROGMEM = R"HTML(
  .foot{padding:12px 20px;color:#9aa0aa;font-size:.85rem;display:flex;
        align-items:center;gap:10px;flex-wrap:wrap}
  a{color:#7aa2ff}
+ .back{text-decoration:none;font-size:.9rem;font-weight:500}
+ .hint{color:#9aa0aa;font-size:.8rem}
  .send{padding:4px 20px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
  button{background:#2f855a;color:#fff;border:0;border-radius:8px;padding:10px 16px;
         font-size:.95rem;font-weight:600;cursor:pointer}
@@ -187,13 +193,15 @@ static const char LIVE_PAGE[] PROGMEM = R"HTML(
  .note{margin:0 20px 16px;padding:12px 14px;border-radius:10px;font-size:.85rem;
        background:#2a2410;border:1px solid #5c4d1a;color:#e8d9a8}
 </style></head><body>
-<header>Live Readings <span id="wifi" class="wbadge err">WiFi: …</span></header>
+<header><a href="/" class="back">&larr; Setup</a> Live Readings
+ <span id="wifi" class="wbadge err">WiFi: …</span></header>
 <div class="note" id="sensor" style="display:none"></div>
 <div class="grid" id="grid"></div>
 <div class="note" id="acc"></div>
 <div class="send">
  <button id="sendbtn">Send a test reading</button>
  <span id="sendresult"></span>
+ <span class="hint">Sending goes out over the network — allow a few seconds for the answer.</span>
 </div>
 <div class="foot">
  <label><input type="checkbox" id="ka"> Keep portal open (disables the 10 min timeout)</label>
@@ -256,17 +264,46 @@ tick();setInterval(tick,5000);
 </script></body></html>
 )HTML";
 
-// Injected into the <head> of every WiFiManager page. On the "credentials
-// saved" page it replaces the default "reconnect to the AP to try again"
-// message with useful links: the portal stays up in AP+STA mode, so the
-// student can go straight back instead of hunting for the AP again.
-static const char SAVED_PAGE_HEAD[] =
+// Injected into the <head> of every WiFiManager page. WiFiManager only draws
+// its own Back button when the private _showBack flag is set, and it exposes no
+// setter for it, so the subpages (Configure WiFi, Setup, Info, the two "saved"
+// pages) otherwise dead-end: on a phone the captive-portal window has no
+// browser chrome to go back with, and students got stuck there. This script
+// runs on every WiFiManager page and adds:
+//
+//   * the "be patient" note — an ESP32 serving a page over its own soft AP
+//     takes seconds, and a second tap while waiting queues a second request on
+//     a single-connection server, which looks exactly like a hang;
+//   * a Back button on every page except the home page;
+//   * on the "credentials saved" page, useful links in place of the default
+//     "reconnect to the AP to try again" — the portal stays up in AP+STA mode,
+//     so the student can go straight back instead of hunting for the AP again.
+static const char PORTAL_HEAD[] =
+    "<style>"
+    ".shsnote{margin:12px 0;padding:10px 12px;border:1px solid #f0d98c;"
+    "background:#fff8e6;border-radius:8px;font-size:.85rem;color:#6b5a17;"
+    "text-align:left}"
+    "</style>"
     "<script>addEventListener('load',function(){"
-    "if(location.pathname.indexOf('wifisave')<0)return;"
-    "var m=document.querySelector('.msg');if(!m)return;"
-    "m.innerHTML=\"Credentials saved. The device is connecting to your network."
+    "var p=location.pathname,w=document.querySelector('.wrap')||document.body;"
+    "if(p.indexOf('wifisave')>=0){"
+    "var m=document.querySelector('.msg');"
+    "if(m)m.innerHTML=\"Credentials saved. The device is connecting to your network."
     "<br><br><a href='/'>Return to setup</a>"
-    "<br><br><a href='/live'>Check the connection &amp; live readings</a>\";"
+    "<br><br><a href='/live'>Check the connection &amp; live readings</a>\";}"
+    "var n=document.createElement('div');n.className='shsnote';"
+    "n.textContent='The sensor serves these pages itself, so they can take a few "
+    "seconds to open — and saving can take longer while it reconnects. Wait for "
+    "the page to change instead of reloading or tapping twice.';"
+    // Below the page heading, not above it.
+    "var h=w.querySelector('h3')||w.querySelector('h1');"
+    "if(h&&h.nextSibling)w.insertBefore(n,h.nextSibling);"
+    "else if(h)w.appendChild(n);else w.insertBefore(n,w.firstChild);"
+    "if(p!=='/'&&p!==''){"
+    "var b=document.createElement('form');b.method='get';b.action='/';"
+    "b.style.margin='16px 0 0';"
+    "b.innerHTML=\"<hr><button type='submit'>&larr; Back to setup</button>\";"
+    "w.appendChild(b);}"
     "});</script>";
 
 // --- Backend test ------------------------------------------------------------
@@ -325,7 +362,11 @@ static void refreshSensorLine() {
 
 // --- Routes ------------------------------------------------------------------
 
-static void sendSimplePage(const char *title, const char *body) {
+// `footer` is the way back from this page — empty for the pages that end the
+// portal, a link (or a "wait for the reboot" note) everywhere else. No default
+// argument: Arduino re-declares these functions from the generated prototypes,
+// and a default given twice is an error.
+static void sendSimplePage(const char *title, const char *body, const char *footer) {
   String html = "<!doctype html><meta charset=utf-8>"
                 "<meta name=viewport content='width=device-width,initial-scale=1'>"
                 "<body style='font-family:system-ui;padding:24px;max-width:34rem'><h3>";
@@ -333,8 +374,21 @@ static void sendSimplePage(const char *title, const char *body) {
   html += "</h3><p>";
   html += body;
   html += "</p>";
+  if (footer && footer[0]) {
+    html += "<p style='margin-top:24px'>";
+    html += footer;
+    html += "</p>";
+  }
   wm.server->send(200, "text/html", html);
 }
+
+// The three resets all restart the board. The AP drops with them, and a phone
+// that silently re-joins its own network makes the setup page look gone for
+// good — so every reboot page says how to get back.
+static const char REBOOT_FOOTER[] =
+    "The setup page comes back by itself once the device has restarted, in about "
+    "10 seconds. If your phone left the setup network in the meantime, re-join it "
+    "and open <a href='/'>this page</a> again.";
 
 static void bindCustomRoutes() {
   wm.server->on("/sensors.json", []() {
@@ -355,7 +409,8 @@ static void bindCustomRoutes() {
   });
   wm.server->on("/finish", HTTP_POST, []() {
     sendSimplePage("Setup finished",
-                   "The device is starting normal operation. You can close this page.");
+                   "The device is starting normal operation. You can close this page.",
+                   "");
     portalDone = true;
   });
 
@@ -364,7 +419,8 @@ static void bindCustomRoutes() {
   // lost (see settings.ino).
   wm.server->on("/resetwifi", HTTP_POST, []() {
     sendSimplePage("Wi-Fi forgotten",
-                   "Settings and calibration are untouched. Rebooting into setup…");
+                   "Settings and calibration are untouched. Rebooting into setup…",
+                   REBOOT_FOOTER);
     clearWiFiCredentials();
     delay(800);
     ESP.restart();
@@ -373,7 +429,8 @@ static void bindCustomRoutes() {
     clearBsecState();
     sendSimplePage("IAQ calibration cleared",
                    "The gas sensor starts learning from scratch: hours to reach "
-                   "accuracy 3, up to four days to fully converge. Rebooting…");
+                   "accuracy 3, up to four days to fully converge. Rebooting…",
+                   REBOOT_FOOTER);
     delay(800);
     ESP.restart();
   });
@@ -384,7 +441,8 @@ static void bindCustomRoutes() {
     sendSimplePage("Factory reset done",
                    "Settings are back to defaults and the network is forgotten. "
                    "The device ID, its write key and the IAQ calibration are kept. "
-                   "Rebooting…");
+                   "Rebooting…",
+                   REBOOT_FOOTER);
     delay(800);
     ESP.restart();
   });
@@ -524,7 +582,7 @@ void runCommissioningPortal() {
 
   wm.setSaveParamsCallback(saveParamsCallback);
   wm.setWebServerCallback(bindCustomRoutes);
-  wm.setCustomHeadElement(SAVED_PAGE_HEAD);
+  wm.setCustomHeadElement(PORTAL_HEAD);
   wm.setConfigPortalBlocking(false);
   wm.setConfigPortalTimeout(0);       // we enforce our own timeout below
   wm.setBreakAfterConfig(true);

@@ -107,7 +107,7 @@ When flashing finishes, the board reboots and the display shows **Setup mode** w
 
 1. On your laptop or phone, join the Wi-Fi network named **`SHS-xxxxxxxx-Setup`**. It has no password.
 2. A setup page should open by itself. If not, browse to **`192.168.4.1`**.
-3. Tap **Configure WiFi**, pick the network, enter the password, and save. It has to be a **2.4 GHz** network: the ESP32-C6 will not see a 5 GHz-only one.
+3. Tap **Configure WiFi**, pick the network, enter the password, and save. Every page here is served by the sensor itself, so give it a few seconds — saving takes longer still, because the board reconnects while you wait. Tapping a second time only queues a second request. Each subpage has a **← Back to setup** button at the bottom. It has to be a **2.4 GHz** network: the ESP32-C6 will not see a 5 GHz-only one.
 4. Go back to the setup page and open **Setup** to give your device a **name**. On a shared dashboard this is what everyone else sees, so make it recognisable. Save.
 5. Open **Live readings & connection test** and press **Send a test reading**.
 
@@ -120,6 +120,8 @@ Press **Finish setup** when the test passes. The portal also closes on its own a
 > Your **device ID** is printed on the display and on the setup page. It is derived from the chip itself, so it never changes, even if you reflash the board.
 
 > **To change a setting later**, press **RESET twice in quick succession**. The display tells you when the window is open, then setup mode returns. This is how you move the device to another network, correct the temperature offset, or point it somewhere else, without reflashing.
+
+> ⚠️ **The current enclosure covers the RESET button.** Until a revised case opens it up, reaching it means sliding the board out of the housing. The way in that needs no button: the device opens setup mode by itself at power-up whenever it cannot reach a Wi-Fi network it already knows. Power it up out of range of the saved network — or with that network switched off — and the `SHS-xxxxxxxx-Setup` network appears on its own. (A network that drops *while* the device is running does not reopen setup; it reconnects in the background instead.)
 
 ---
 
@@ -155,7 +157,7 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
 | Test says **✗ could not reach…** | The device is on Wi-Fi but has no internet. Captive-portal networks (hotel/campus guest Wi-Fi) will not work. |
 | Nothing on the dashboard | If you pressed **Send a test reading**, your data is already there: check the device ID in the URL character for character. If you did not, the next scheduled reading is up to 5 minutes away. |
 | **IAQ accuracy fell from 3 back to 1** | Normal. BSEC is rebuilding its baseline after a change in the air, a restart, or air that never varies. It climbs back on its own. |
-| **I need to change a setting** | Press **RESET twice quickly**. The display tells you when the window is open, then setup mode returns. |
+| **I need to change a setting** | Press **RESET twice quickly**. The display tells you when the window is open, then setup mode returns. In the current enclosure the button is covered — either take the board out, or power the device up where its saved network is unreachable, which opens setup mode anyway. |
 
 The setup portal also offers three separate resets: *Forget Wi-Fi network*, *Clear IAQ calibration*, and *Factory reset* (settings + Wi-Fi). None of them changes the device ID, and only the middle one discards the air-quality calibration, which takes hours to rebuild, so it is deliberately not bundled into the others.
 

@@ -29,7 +29,8 @@ First boot opens the Wi-Fi network **`SHS-xxxxxxxx-Setup`** (no password) → br
 *Live readings & connection test* → **Send a test reading** (green **✓ 201** or **200** =
 stored) → **Finish**.
 
-**Back into setup later: press RESET twice quickly.**
+**Back into setup later: press RESET twice quickly.** The enclosure covers that button — slide
+the board out, or power up away from the saved Wi-Fi: with no known network it opens setup itself.
 
 ## 4. Your readings
 

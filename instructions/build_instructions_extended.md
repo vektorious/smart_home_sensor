@@ -116,6 +116,8 @@ On first boot — and whenever it cannot reach a saved network — the device op
 The portal closes on its own after 10 minutes if you don't.
 
 > **Getting back in later.** Press **RESET twice in quick succession** — the display tells you when the window is open. This is how you change the broker address, move the device to a new network, or recalibrate, without reflashing.
+>
+> The current enclosure covers the RESET button, so reaching it means taking the board out. Without touching it: the device opens setup mode on its own at power-up whenever the saved network is unreachable — powering it up away from that network (or with it switched off) is the button-free way back in. Losing the network while running does not reopen the portal; it reconnects in the background.
 
 > **The device ID** shown on the display and the setup page is derived from the chip and never changes, even across a reflash or a factory reset. It is what keys the MQTT topics and the Home Assistant entities, so re-flashing a board does not orphan its history.
 
