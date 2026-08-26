@@ -61,12 +61,18 @@
 //  ("<prefix>-<hash8>", the first 32 bits of SHA-256 over the full 48-bit MAC):
 //  unique per board, stable across reboots, reflashes and a factory reset, so a
 //  student's dashboard entry never moves. Hashing rather than truncating the MAC
-//  is what keeps the eight characters varied — see deriveIdentity(). It is shown in
-//  the portal but is deliberately not editable — the device NAME is what
-//  students personalise.
+//  is what keeps the eight characters varied — see deriveIdentity().
+//
+//  The derived ID is only unique as long as the MAC is: boards that ship with a
+//  duplicated efuse MAC derive the same ID and fight over one dashboard entry.
+//  The SENSORBOARD builds therefore accept an override in the portal, stored in
+//  NVS and applied on top of the derived value (deviceIdOverride below). It is
+//  an escape hatch for a collision, not the normal path — blank means "use the
+//  derived ID", and the device NAME is still what students personalise.
 // ---------------------------------------------------------------------------
 #define DEFAULT_DEVICE_NAME       "SHS"    // keep short — the title area fits ~14 chars
 #define DEFAULT_DEVICE_ID_PREFIX  "shs"    // [a-z0-9-] only; the API rejects anything else
+#define SHS_DEVICE_ID_MIN_LEN     3        // shorter than this is a typo, not an ID
 
 // ---------------------------------------------------------------------------
 //  diy-sensor.org defaults (SENSORBOARD build)
@@ -229,7 +235,8 @@ static_assert(sizeof(DEFAULT_API_URL) <= SHS_API_URL_LEN,
               "DEFAULT_API_URL does not fit in Settings::apiUrl — raise SHS_API_URL_LEN");
 struct Settings {
   char     deviceName[32];
-  char     deviceId[32];          // derived from the MAC; not user-editable
+  char     deviceId[32];          // derived from the MAC (or overridden below)
+  char     deviceIdOverride[32];  // empty = use the derived ID; set in the portal
   char     project[SHS_PROJECT_LEN];
   char     writeKey[SHS_WRITE_KEY_LEN];
   char     apiUrl[SHS_API_URL_LEN];
@@ -254,6 +261,7 @@ void saveSettings();               // persist `settings` to NVS
 void resetSettingsToDefaults();    // DEFAULT_* into RAM; call saveSettings() to persist
 void clearWiFiCredentials();       // forget the saved network only
 void clearBsecState();             // discard the IAQ calibration only
+bool setDeviceIdOverride(const char *raw);  // "" clears it; false = rejected as invalid
 
 // ---------------------------------------------------------------------------
 //  Shared sensor reading — filled by bme680.ino, consumed by display.ino and

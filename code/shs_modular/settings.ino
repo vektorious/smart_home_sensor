@@ -6,9 +6,11 @@
 //  these and calls saveSettings(). config.h no longer needs editing per device,
 //  which is what lets a single web-flashed binary be reconfigured on the bench.
 //
-//  DEVICE IDENTITY IS NOT A SETTING. The device ID and the write key are
-//  derived from the factory-programmed MAC, not stored, so no reset can lose
-//  them — see deriveIdentity() below for why that matters.
+//  DEVICE IDENTITY IS DERIVED, not stored: the device ID and the write key come
+//  from the factory-programmed MAC, so no reset can lose them — see
+//  deriveIdentity() below for why that matters. The one exception is an explicit
+//  device-ID override entered in the portal, which is a setting like any other;
+//  see setDeviceIdOverride().
 // ============================================================================
 #include "config.h"
 #include <Preferences.h>
@@ -22,6 +24,10 @@ static Preferences settingsPrefs;
 
 static const char *NVS_NAMESPACE = "shs";
 // Bump when the Settings layout changes so stale flash is re-initialised.
+// Deliberately NOT bumped for deviceIdOverride: a bump throws every configured
+// device back to defaults on the next boot, and the new field needs no
+// migration — an absent NVS key leaves the buffer untouched, and loadSettings()
+// clears it first.
 static const uint32_t SETTINGS_VERSION = 4;
 
 // ---------------------------------------------------------------------------
@@ -133,10 +139,89 @@ static void deriveIdentity(char *idOut, size_t idLen, char *uidOut, size_t uidLe
   snprintf(idOut, idLen, "%s-%s", DEFAULT_DEVICE_ID_PREFIX, uidOut);
 }
 
+// The derived ID assumes a unique MAC. Boards from some batches ship with a
+// duplicated efuse MAC, and two of those in one room derive the same ID, publish
+// to the same dashboard entry and overwrite each other's readings. The override
+// is the way out on the workshop floor: it is stored, so unlike the derived ID
+// it does not survive a flash erase, and it deliberately does not touch the
+// write key — that stays derived from the MAC, which is what lets the board
+// claim the new ID at all.
+//
+// Normalises into `out`: trimmed, lower-cased, [a-z0-9-] only, and prefixed with
+// DEFAULT_DEVICE_ID_PREFIX unless the input already carries it, so a student who
+// types "bench2" still ends up inside the project's namespace. Returns false if
+// nothing usable is left — the caller keeps the previous ID rather than
+// publishing under a mangled one.
+static bool normaliseDeviceId(const char *raw, char *out, size_t outLen) {
+  if (raw == nullptr) return false;
+
+  char cleaned[32];
+  size_t n = 0;
+  for (const char *p = raw; *p && n < sizeof(cleaned) - 1; p++) {
+    char c = *p;
+    if (c >= 'A' && c <= 'Z') c = (char)(c - 'A' + 'a');
+    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-') {
+      // No leading or doubled separators: the API takes them, dashboards read
+      // badly with them.
+      if (c == '-' && (n == 0 || cleaned[n - 1] == '-')) continue;
+      cleaned[n++] = c;
+    }
+  }
+  while (n > 0 && cleaned[n - 1] == '-') n--;   // nor a trailing one
+  cleaned[n] = '\0';
+  if (n < SHS_DEVICE_ID_MIN_LEN) return false;
+
+  const char *prefix = DEFAULT_DEVICE_ID_PREFIX;
+  size_t plen = strlen(prefix);
+  bool hasPrefix = strncmp(cleaned, prefix, plen) == 0 && cleaned[plen] == '-';
+  int written = hasPrefix ? snprintf(out, outLen, "%s", cleaned)
+                          : snprintf(out, outLen, "%s-%s", prefix, cleaned);
+  // Truncation would silently claim a different ID than the one on screen.
+  return written > 0 && (size_t)written < outLen;
+}
+
+// Copy the override over the derived ID, if one is set and still valid. Called
+// after every deriveIdentity() so a single path decides what settings.deviceId
+// finally holds.
+static void applyDeviceIdOverride() {
+  if (settings.deviceIdOverride[0] == '\0') return;
+  char normalised[sizeof(settings.deviceId)];
+  if (normaliseDeviceId(settings.deviceIdOverride, normalised, sizeof(normalised))) {
+    strlcpy(settings.deviceId, normalised, sizeof(settings.deviceId));
+  } else {
+    // Stored value no longer passes validation (a rule change, or corrupt
+    // flash): fall back to the derived ID rather than to something invalid.
+    settings.deviceIdOverride[0] = '\0';
+  }
+}
+
+// Portal entry point. "" clears the override and returns to the derived ID;
+// anything else is normalised first and rejected if nothing usable is left.
+// Does not save — the caller batches this with the rest of the form.
+bool setDeviceIdOverride(const char *raw) {
+  if (raw == nullptr || raw[0] == '\0') {
+    settings.deviceIdOverride[0] = '\0';
+    char uid[9];
+    deriveIdentity(settings.deviceId, sizeof(settings.deviceId), uid, sizeof(uid));
+    return true;
+  }
+
+  char normalised[sizeof(settings.deviceId)];
+  if (!normaliseDeviceId(raw, normalised, sizeof(normalised))) return false;
+
+  strlcpy(settings.deviceIdOverride, normalised, sizeof(settings.deviceIdOverride));
+  strlcpy(settings.deviceId,         normalised, sizeof(settings.deviceId));
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 
 void resetSettingsToDefaults() {
   char uid[9];
+  // A factory reset drops the override: it is a setting, and the derived ID is
+  // the factory state. The ID it named stays claimed by this board's write key,
+  // so entering it again in the portal re-adopts it.
+  settings.deviceIdOverride[0] = '\0';
   deriveIdentity(settings.deviceId, sizeof(settings.deviceId), uid, sizeof(uid));
   snprintf(settings.deviceName, sizeof(settings.deviceName), "%s-%s",
            DEFAULT_DEVICE_NAME, uid);
@@ -179,6 +264,10 @@ void loadSettings() {
   }
 
   settingsPrefs.getString("deviceName",  settings.deviceName,  sizeof(settings.deviceName));
+  // Cleared first: Preferences leaves the buffer alone when the key is absent,
+  // which is exactly the case on a device flashed before this field existed.
+  settings.deviceIdOverride[0] = '\0';
+  settingsPrefs.getString("devIdOvr",    settings.deviceIdOverride, sizeof(settings.deviceIdOverride));
   settingsPrefs.getString("project",     settings.project,     sizeof(settings.project));
   settingsPrefs.getString("writeKey",    settings.writeKey,    sizeof(settings.writeKey));
   settingsPrefs.getString("apiUrl",      settings.apiUrl,      sizeof(settings.apiUrl));
@@ -200,6 +289,10 @@ void loadSettings() {
   // from someone else's NVS dump would otherwise publish under their ID.
   char uid[9];
   deriveIdentity(settings.deviceId, sizeof(settings.deviceId), uid, sizeof(uid));
+  // ...except an override the user typed in the portal, which is stored and
+  // wins over the derived value. Only the ID moves; the write key stays derived
+  // from the MAC, so the board still owns whatever ID it publishes under.
+  applyDeviceIdOverride();
 
 #if SHS_HAS_WORKSHOP_KEY
   // Credentials compiled into the image are a property of the image, not a user
@@ -225,6 +318,7 @@ void loadSettings() {
 void saveSettings() {
   settingsPrefs.begin(NVS_NAMESPACE, /* readOnly */ false);
   settingsPrefs.putString("deviceName", settings.deviceName);
+  settingsPrefs.putString("devIdOvr",   settings.deviceIdOverride);
   settingsPrefs.putString("project",    settings.project);
   settingsPrefs.putString("writeKey",   settings.writeKey);
   settingsPrefs.putString("apiUrl",     settings.apiUrl);
