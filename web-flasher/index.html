@@ -71,21 +71,12 @@
   <div class="card">
     <div class="picker">
       <label class="pick">
-        <input type="radio" name="fw" value="manifest-workshop.json" checked>
-        <span>
-          <span class="t">European Impact Sprint <span class="tag">workshop</span></span><br>
-          <span class="d">Publishes to the sprint's shared dashboard out of the box. Name your
-          device in the setup portal and it appears under the
-          <code>european-impact-sprint</code> project. Nothing to configure.</span>
-        </span>
-      </label>
-      <label class="pick">
-        <input type="radio" name="fw" value="manifest-sensorboard.json">
+        <input type="radio" name="fw" value="manifest-sensorboard.json" checked>
         <span>
           <span class="t">diy-sensor.org</span><br>
-          <span class="d">The standard build, publishing to the same dashboard. Your device claims
-          its own ID and keeps its readings for 48 h after the last one. This image stays
-          available indefinitely.</span>
+          <span class="d">The standard build. Your device claims its own ID and keeps its
+          readings for 48 h after the last one. This image stays available
+          indefinitely.</span>
         </span>
       </label>
       <label class="pick">
@@ -107,23 +98,25 @@
     </div>
 
     <div class="expiry">
-      <strong>The European Impact Sprint image comes down on 26 August 2026</strong>, the day
-      after the workshop. You will not be able to install it from this page after that.
-      Boards already running it are unaffected and keep publishing.
+      <strong>The European Impact Sprint image has been withdrawn.</strong> The sprint is
+      over and its image is no longer installable from this page. Boards already running it
+      are unaffected and keep publishing.
       Readings last as long as the device keeps sending them: once a device stops, it and
       its history are removed from the dashboard 48&nbsp;hours later.
       <br><br>
       Your board keeps working. Re-flash it with the <strong>diy-sensor.org</strong> image
-      above, which stays on this page and publishes to the same dashboard.
+      above, which publishes to the same dashboard.
       <br><br>
       To keep the <em>same</em> device ID, copy the <strong>write key</strong> from your
-      setup page first, then paste it into the new firmware's <strong>Write key</strong>
-      field. Without it the device ID is still claimed by the old firmware's key and the
-      dashboard will reject the readings until that device expires.
+      setup page <em>before</em> re-flashing, then paste it into the new firmware's
+      <strong>Write key</strong> field. The sprint image was the only one that could
+      recreate that key, so once the board is re-flashed it is gone: without it the device
+      ID stays claimed by the old key and the dashboard will reject the readings until
+      that device expires.
     </div>
 
     <div class="install">
-      <esp-web-install-button id="installer" manifest="manifest-workshop.json">
+      <esp-web-install-button id="installer" manifest="manifest-sensorboard.json">
         <span slot="unsupported">
           Your browser doesn’t support Web Serial. Use <strong>Chromium</strong>,
           a recent <strong>Firefox</strong>, <strong>Chrome</strong>, <strong>Edge</strong>, or
