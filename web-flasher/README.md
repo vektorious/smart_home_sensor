@@ -7,7 +7,7 @@ Arduino IDE and no drivers.
 ## Files
 
 | File | Purpose |
-|------|---------|
+|---|---|
 | `index.html` | The flasher page: firmware picker + install button |
 | `manifest-workshop.json` | European Impact Sprint — keyed, time-limited |
 | `manifest-sensorboard.json` | diy-sensor.org, keyless — the standard build |
@@ -49,6 +49,15 @@ producing an anonymous binary that calls itself the workshop image.
   to run on plain `http://`.
 - A USB-C **data** cable.
 
+## Reproducible local toolchain
+
+The optional `tools/setup-arduino.sh` installs a pinned Arduino CLI toolchain into
+`.toolchain/` inside the checkout (which is gitignored): the CLI binary, ESP32 core,
+archives, Arduino data, and libraries all remain available across sandbox sessions.
+Run it once, then `web-flasher/build.sh sensorboard` uses that local CLI automatically.
+The setup intentionally does **not** install the Arduino `QRCode` library: the sketch
+uses Espressif's `qrcode.h` from the ESP32 core, and the third-party library shadows it.
+
 ## Building the images
 
 ```bash
@@ -83,96 +92,3 @@ offered the update.
 Built against the gitignored `code/shs_modular/workshop_secrets.h` (see
 `workshop_secrets.example.h`), which bakes in an API key, the dashboard project, and
 the salt each device derives its write key from.
-
-**Why it carries a key at all.** Not for persistence — that is switched *off* for the
-workshop policy. It is the per-IP limits: a class sits behind one NAT address, and the
-anonymous policy allows 10 active devices, 5 new devices an hour, and 1,000 requests a
-day. A keyless class of 80 boards would stop at the fifth. With a key those become
-500 / 100 / 50,000.
-
-**Treat it as a temporary artefact.** Anything in that header is inside a binary served
-publicly, so `strings` recovers it in seconds. The **API key** is therefore effectively
-published: anyone who downloads the image can write to the instance under the workshop
-policy, and because the write budget is charged per credential they can drain the same
-bucket the class draws from.
-
-The **salt** is weaker than it looks, but not as weak as "the key is public":
-
-- The write key is `HMAC-SHA256(salt, mac)` over the **full 48-bit MAC**, while the
-  public device ID carries only the low 32 bits — and those are the OUI plus one NIC
-  byte, the predictable part. A device ID therefore leaves 2^16 = 65,536 candidates,
-  with no offline way to test one: each guess costs a POST. Under the per-IP limits
-  that is hours per device and a wall of 403s in the ingest log.
-- Proximity defeats it entirely. The ESP32's Wi-Fi station MAC **is** the base efuse
-  MAC — the exact derivation input — broadcast in the clear in every frame. Anyone in
-  radio range reads all 48 bits passively, without joining the network.
-
-Inherent to deriving from the MAC; no salt scheme changes it, and it is the price of a
-key that survives a flash erase so a student cannot brick their device ID. For a
-classroom it is a prank vector, not a breach.
-
-### Retiring it
-
-The page states a withdrawal date, and the date is the point:
-
-1. delete `manifest-workshop.json` and `firmware/shs-workshop.bin` from `gh-pages`,
-   and drop the option from `index.html`;
-2. remove the key from `API_KEYS` in the server `.env` and restart the service;
-3. `python -m app.admin delete-key-data <sha256>` for anything left behind.
-
-With `POLICY_<NAME>_PERSISTENT_DEVICES=false` step 3 is mostly a formality: the
-devices expire 48 h after their last reading on their own.
-
-**Set that policy before the first board claims its ID.** `persistent` is a column
-stamped at creation (`routes/ingest.py`: `persistent=authenticated and
-policy.persistent_devices`) and the sweep reads the column, not the current policy.
-Applied afterwards it changes nothing for devices that already exist: they stay
-persistent forever, are never swept, and their IDs never become claimable again
-without deleting them by hand.
-
-Students keep their hardware: the keyless **sensorboard** image stays on the page and
-publishes to the same dashboard. It claims the same device ID, so if the workshop
-device has not expired yet, paste the write key shown on the workshop portal page into
-the keyless build's *Write key* field to adopt it. After expiry the ID is simply free
-again.
-
-## Hosting
-
-GitHub Pages publishes from a branch root or `/docs`, not an arbitrary subfolder, so
-the site lives on a dedicated `gh-pages` branch mirroring this folder at its root:
-
-```
-gh-pages/
-├── index.html
-├── vendor/                    # ESP Web Tools (26 files + LICENSE)
-├── manifest-workshop.json
-├── manifest-sensorboard.json
-├── manifest-ha.json
-├── manifest-display.json
-├── .nojekyll
-└── firmware/
-    ├── shs-workshop.bin
-    ├── shs-sensorboard.bin
-    ├── shs-ha.bin
-    └── shs-display.bin
-```
-
-The binaries live only on `gh-pages` — four 4 MB images per release would bloat
-`main`'s history for no benefit, which is why `firmware/.gitignore` excludes them.
-
-```bash
-git worktree add /tmp/ghpages gh-pages
-cp index.html manifest-*.json /tmp/ghpages/
-cp -r vendor /tmp/ghpages/
-cp firmware/*.bin /tmp/ghpages/firmware/
-# bump "version" in the manifests you changed
-git -C /tmp/ghpages commit -am "Update flasher firmware" && git -C /tmp/ghpages push
-git worktree remove /tmp/ghpages
-```
-
-## Local testing
-
-```bash
-python3 -m http.server 8000
-# open http://localhost:8000 — localhost counts as secure for Web Serial
-```

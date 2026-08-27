@@ -1,3 +1,6 @@
+# Persistent local Arduino CLI toolchain
+.toolchain/
+
 .obsidian
 .tmp/
 

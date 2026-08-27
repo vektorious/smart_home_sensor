@@ -161,13 +161,11 @@ static bool normaliseDeviceId(const char *raw, char *out, size_t outLen) {
     char c = *p;
     if (c >= 'A' && c <= 'Z') c = (char)(c - 'A' + 'a');
     if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-') {
-      // No leading or doubled separators: the API takes them, dashboards read
-      // badly with them.
       if (c == '-' && (n == 0 || cleaned[n - 1] == '-')) continue;
       cleaned[n++] = c;
     }
   }
-  while (n > 0 && cleaned[n - 1] == '-') n--;   // nor a trailing one
+  while (n > 0 && cleaned[n - 1] == '-') n--;
   cleaned[n] = '\0';
   if (n < SHS_DEVICE_ID_MIN_LEN) return false;
 
@@ -176,28 +174,19 @@ static bool normaliseDeviceId(const char *raw, char *out, size_t outLen) {
   bool hasPrefix = strncmp(cleaned, prefix, plen) == 0 && cleaned[plen] == '-';
   int written = hasPrefix ? snprintf(out, outLen, "%s", cleaned)
                           : snprintf(out, outLen, "%s-%s", prefix, cleaned);
-  // Truncation would silently claim a different ID than the one on screen.
   return written > 0 && (size_t)written < outLen;
 }
 
-// Copy the override over the derived ID, if one is set and still valid. Called
-// after every deriveIdentity() so a single path decides what settings.deviceId
-// finally holds.
 static void applyDeviceIdOverride() {
   if (settings.deviceIdOverride[0] == '\0') return;
   char normalised[sizeof(settings.deviceId)];
   if (normaliseDeviceId(settings.deviceIdOverride, normalised, sizeof(normalised))) {
     strlcpy(settings.deviceId, normalised, sizeof(settings.deviceId));
   } else {
-    // Stored value no longer passes validation (a rule change, or corrupt
-    // flash): fall back to the derived ID rather than to something invalid.
     settings.deviceIdOverride[0] = '\0';
   }
 }
 
-// Portal entry point. "" clears the override and returns to the derived ID;
-// anything else is normalised first and rejected if nothing usable is left.
-// Does not save — the caller batches this with the rest of the form.
 bool setDeviceIdOverride(const char *raw) {
   if (raw == nullptr || raw[0] == '\0') {
     settings.deviceIdOverride[0] = '\0';
@@ -214,13 +203,39 @@ bool setDeviceIdOverride(const char *raw) {
   return true;
 }
 
-// ---------------------------------------------------------------------------
+static void printIdentityDiagnostics(const char *stage) {
+  uint64_t efuseMac = ESP.getEfuseMac();
+  uint8_t mac[6];
+  macToBytes(mac);
+
+  // Keep these three lines verbatim with the issue report so logs can be
+  // compared directly between colliding boards.
+  Serial.printf("Efuse MAC raw: %012llx\n",
+                (unsigned long long)(efuseMac & 0xFFFFFFFFFFFFULL));
+  Serial.printf("Device ID: %s\n", settings.deviceId);
+  Serial.printf("Device name: %s\n", settings.deviceName);
+
+  Serial.printf("Identity[%s]: efuse_mac=%02x:%02x:%02x:%02x:%02x:%02x ",
+                stage, mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
+  Serial.printf("wifi_mac=%s\n", WiFi.macAddress().c_str());
+  char derivedId[sizeof(settings.deviceId)];
+  char uid[9];
+  deriveIdentity(derivedId, sizeof(derivedId), uid, sizeof(uid));
+
+  Serial.printf("Identity[%s]: efuse_u64=0x%012llx derived_id=%s override=%s final_id=%s\n",
+                stage, (unsigned long long)(efuseMac & 0xFFFFFFFFFFFFULL),
+                derivedId,
+                settings.deviceIdOverride[0] ? settings.deviceIdOverride : "<none>",
+                settings.deviceId);
+#if SHS_DERIVED_WRITE_KEY
+  Serial.printf("Identity[%s]: write_key_source=derived salt_present=yes\n", stage);
+#else
+  Serial.printf("Identity[%s]: write_key_source=random-nvs salt_present=no\n", stage);
+#endif
+}
 
 void resetSettingsToDefaults() {
   char uid[9];
-  // A factory reset drops the override: it is a setting, and the derived ID is
-  // the factory state. The ID it named stays claimed by this board's write key,
-  // so entering it again in the portal re-adopts it.
   settings.deviceIdOverride[0] = '\0';
   deriveIdentity(settings.deviceId, sizeof(settings.deviceId), uid, sizeof(uid));
   snprintf(settings.deviceName, sizeof(settings.deviceName), "%s-%s",
@@ -241,8 +256,6 @@ void resetSettingsToDefaults() {
   settings.tempOffsetC        = DEFAULT_TEMP_OFFSET_C;
   settings.lcdRotation        = DEFAULT_LCD_ROTATION;
 
-  // Derived keys survive this reset unchanged; a random key is only minted if
-  // there is no salt to derive from and none has been stored yet.
   if (!deriveWriteKey(WORKSHOP_KEY_SALT, settings.writeKey, sizeof(settings.writeKey))) {
     if (settings.writeKey[0] == '\0') {
       randomWriteKey(settings.writeKey, sizeof(settings.writeKey));
@@ -264,8 +277,6 @@ void loadSettings() {
   }
 
   settingsPrefs.getString("deviceName",  settings.deviceName,  sizeof(settings.deviceName));
-  // Cleared first: Preferences leaves the buffer alone when the key is absent,
-  // which is exactly the case on a device flashed before this field existed.
   settings.deviceIdOverride[0] = '\0';
   settingsPrefs.getString("devIdOvr",    settings.deviceIdOverride, sizeof(settings.deviceIdOverride));
   settingsPrefs.getString("project",     settings.project,     sizeof(settings.project));
@@ -276,7 +287,7 @@ void loadSettings() {
   settingsPrefs.getString("mqttUser",    settings.mqttUser,    sizeof(settings.mqttUser));
   settingsPrefs.getString("mqttPass",    settings.mqttPass,    sizeof(settings.mqttPass));
   settingsPrefs.getString("mqttPrefix",  settings.mqttPrefix,  sizeof(settings.mqttPrefix));
-  settingsPrefs.getString("haDisc",      settings.haDiscPrefix, sizeof(settings.haDiscPrefix));
+  settingsPrefs.getString("haDisc",     settings.haDiscPrefix, sizeof(settings.haDiscPrefix));
   settings.mqttPort           = settingsPrefs.getUShort("mqttPort", DEFAULT_MQTT_PORT);
   settings.mqttMode           = settingsPrefs.getUChar("mqttMode",  DEFAULT_MQTT_MODE);
   settings.mqttTls            = settingsPrefs.getBool("mqttTls",    DEFAULT_MQTT_TLS);
@@ -285,27 +296,15 @@ void loadSettings() {
   settings.lcdRotation        = settingsPrefs.getUChar("rot",       DEFAULT_LCD_ROTATION);
   settingsPrefs.end();
 
-  // Identity is always recomputed, never trusted from flash: a board restored
-  // from someone else's NVS dump would otherwise publish under their ID.
   char uid[9];
   deriveIdentity(settings.deviceId, sizeof(settings.deviceId), uid, sizeof(uid));
-  // ...except an override the user typed in the portal, which is stored and
-  // wins over the derived value. Only the ID moves; the write key stays derived
-  // from the MAC, so the board still owns whatever ID it publishes under.
   applyDeviceIdOverride();
 
 #if SHS_HAS_WORKSHOP_KEY
-  // Credentials compiled into the image are a property of the image, not a user
-  // setting, so they are reapplied rather than read from flash. Without this a
-  // board that ever ran a different build keeps that build's stored key: NVS
-  // survives re-flashing, and the settings version does not change when only
-  // the credentials do. That is a 401 with nothing on the device to explain it.
   strlcpy(settings.apiKey,  DEFAULT_API_KEY, sizeof(settings.apiKey));
   strlcpy(settings.project, DEFAULT_PROJECT, sizeof(settings.project));
 #endif
 
-  // A salted build always re-derives; an unsalted one keeps whatever is stored,
-  // and only mints a key if flash somehow came back empty.
   if (!deriveWriteKey(WORKSHOP_KEY_SALT, settings.writeKey, sizeof(settings.writeKey)) &&
       settings.writeKey[0] == '\0') {
     randomWriteKey(settings.writeKey, sizeof(settings.writeKey));
@@ -313,6 +312,7 @@ void loadSettings() {
   }
 
   Serial.println("Settings: loaded from NVS");
+  printIdentityDiagnostics("loaded");
 }
 
 void saveSettings() {
@@ -338,20 +338,14 @@ void saveSettings() {
   settingsPrefs.end();
 
   Serial.println("Settings: saved to NVS");
+  printIdentityDiagnostics("saved");
 }
 
-// Forget the saved network only — settings, identity and the IAQ calibration
-// all stay. This is the button for "I typed the wrong Wi-Fi password".
 void clearWiFiCredentials() {
   WiFi.disconnect(/* wifioff */ false, /* eraseap */ true);
   Serial.println("Settings: Wi-Fi credentials cleared");
 }
 
-// Discard the BSEC calibration only. Kept separate from the factory reset
-// because it is expensive to rebuild — hours to reach accuracy 3, up to four
-// days to fully converge — and because clearing it is occasionally what you
-// actually want: after moving the device to a different room, or when a bad
-// calibration has locked itself in.
 void clearBsecState() {
   Preferences p;
   p.begin("bsec", /* readOnly */ false);
