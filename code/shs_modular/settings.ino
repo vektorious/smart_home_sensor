@@ -15,6 +15,7 @@
 #include "config.h"
 #include <Preferences.h>
 #include <WiFi.h>
+#include <esp_mac.h>
 #include <mbedtls/md.h>
 
 // Global settings instance (declared extern in config.h).
@@ -237,12 +238,20 @@ static void printIdentityDiagnostics(const char *stage) {
   Serial.printf("Device ID: %s\n", settings.deviceId);
   Serial.printf("Device name: %s\n", settings.deviceName);
 
+  uint8_t staMac[6];
+  bool staMacOk = esp_read_mac(staMac, ESP_MAC_WIFI_STA) == ESP_OK;
+
   Serial.printf("Identity[%s]: hash_ok=%d fallback=%s ",
                 stage, lastIdentityHashOk ? 1 : 0,
                 lastIdentityHashOk ? "no" : "raw-mac");
   Serial.printf("Identity[%s]: efuse_mac=%02x:%02x:%02x:%02x:%02x:%02x ",
                 stage, mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
-  Serial.printf("wifi_mac=%s\n", WiFi.macAddress().c_str());
+  if (staMacOk) {
+    Serial.printf("wifi_sta_mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
+                  staMac[0], staMac[1], staMac[2], staMac[3], staMac[4], staMac[5]);
+  } else {
+    Serial.println("wifi_sta_mac=<unavailable>");
+  }
 
   Serial.printf("Identity[%s]: efuse_u64=0x%012llx derived_id=%s override=%s final_id=%s\n",
                 stage, (unsigned long long)(efuseMac & 0xFFFFFFFFFFFFULL),
