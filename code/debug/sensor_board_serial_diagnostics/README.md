@@ -40,9 +40,16 @@ The report repeats every five seconds. The important comparison fields are:
 
 - `efuse_mac_u64`
 - `efuse_mac_human`
+- `esp_idf_factory_mac`
+- `esp_idf_base_mac`
 - `wifi_sta_mac`
 - `arduino_wifi_sta_mac`
 - `production_derived_device_id`
+
+`esp_idf_factory_mac` is the factory MAC read directly through ESP-IDF;
+`esp_idf_base_mac` is the base MAC currently exposed by the IDF; the interface
+MACs are derived from the base MAC. `esp_idf_base_mac` is diagnostic only—the
+sketch does not modify it.
 
 If two physical boards have the same `efuse_mac_u64` or the same
 `production_derived_device_id`, preserve both complete reports. Do not edit or

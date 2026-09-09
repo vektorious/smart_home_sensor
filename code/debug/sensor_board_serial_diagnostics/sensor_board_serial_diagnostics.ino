@@ -22,14 +22,24 @@ static void printMac(const char *label, const uint8_t mac[6]) {
                 label, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 }
 
-static void printMacOrUnavailable(const char *label, esp_mac_type_t type) {
-  uint8_t mac[6] = {};
-  esp_err_t result = esp_read_mac(mac, type);
+static void printMacResult(const char *label, esp_err_t result, const uint8_t mac[6]) {
   if (result == ESP_OK) {
     printMac(label, mac);
   } else {
     Serial.printf("%s=<unavailable:%s>\n", label, esp_err_to_name(result));
   }
+}
+
+static void printMacOrUnavailable(const char *label, esp_mac_type_t type) {
+  uint8_t mac[6] = {};
+  printMacResult(label, esp_read_mac(mac, type), mac);
+}
+
+static void printBaseAndFactoryMacs() {
+  uint8_t mac[6] = {};
+  printMacResult("esp_idf_base_mac", esp_base_mac_addr_get(mac), mac);
+  memset(mac, 0, sizeof(mac));
+  printMacResult("esp_idf_factory_mac", esp_efuse_mac_get_default(mac), mac);
 }
 
 static void printEfuseMac(uint64_t efuseMac) {
@@ -84,9 +94,9 @@ static void printReport() {
 
   Serial.println();
   Serial.println("=== SENSOR_BOARD_IDENTITY_REPORT_BEGIN ===");
-  Serial.printf("report_version=1\n");
+  Serial.printf("report_version=2\n");
   Serial.printf("millis=%lu\n", (unsigned long)millis());
-  Serial.printf("arduino_core=%s\n", ESP.getSdkVersion());
+  Serial.printf("esp_idf_version=%s\n", ESP.getSdkVersion());
   Serial.printf("chip_model=%s\n", ESP.getChipModel());
   Serial.printf("chip_revision=%d\n", ESP.getChipRevision());
   Serial.printf("chip_cores=%d\n", chipInfo.cores);
@@ -96,6 +106,7 @@ static void printReport() {
   printResetReason();
 
   printEfuseMac(efuseMac);
+  printBaseAndFactoryMacs();
   printMacOrUnavailable("wifi_sta_mac", ESP_MAC_WIFI_STA);
   printMacOrUnavailable("wifi_ap_mac", ESP_MAC_WIFI_SOFTAP);
   printMacOrUnavailable("bt_mac", ESP_MAC_BT);
