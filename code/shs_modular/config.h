@@ -57,14 +57,15 @@
 
 // ---------------------------------------------------------------------------
 //  Device identity defaults
-//  The device ID is derived from the factory-programmed MAC in efuse
+//  The device ID is derived from the ESP-IDF base MAC
 //  ("<prefix>-<hash8>", the first 32 bits of SHA-256 over the full 48-bit MAC):
 //  unique per board, stable across reboots, reflashes and a factory reset, so a
 //  student's dashboard entry never moves. Hashing rather than truncating the MAC
 //  is what keeps the eight characters varied — see deriveIdentity().
 //
-//  The derived ID is only unique as long as the MAC is: boards that ship with a
-//  duplicated efuse MAC derive the same ID and fight over one dashboard entry.
+//  The ESP-IDF base MAC is used because some boards ship with a duplicated
+//  eFuse/IEEE MAC; deriving from that value would make them fight over one
+//  dashboard entry.
 //  The SENSORBOARD builds therefore accept an override in the portal, stored in
 //  NVS and applied on top of the derived value (deviceIdOverride below). It is
 //  an escape hatch for a collision, not the normal path — blank means "use the
