@@ -15,12 +15,15 @@
 #include "config.h"
 #include <Preferences.h>
 #include <WiFi.h>
+#include <esp_mac.h>
 #include <mbedtls/md.h>
 
 // Global settings instance (declared extern in config.h).
 Settings settings;
 
 static Preferences settingsPrefs;
+
+static bool lastIdentityHashOk = false;
 
 static const char *NVS_NAMESPACE = "shs";
 // Bump when the Settings layout changes so stale flash is re-initialised.
@@ -31,7 +34,10 @@ static const char *NVS_NAMESPACE = "shs";
 static const uint32_t SETTINGS_VERSION = 4;
 
 // ---------------------------------------------------------------------------
-//  Device identity — derived, never stored
+//  Device identity — derived from the ESP-IDF base MAC
+//
+//  The ESP32-C6 eFuse/IEEE MAC is not unique on some boards in the field.
+//  Device IDs and derived write keys therefore use the unique ESP-IDF base MAC.
 //
 //  The write key is what proves ownership of a device ID to diy-sensor.org, and
 //  it is unrecoverable by design: there is no reset endpoint. A device that
@@ -41,7 +47,7 @@ static const uint32_t SETTINGS_VERSION = 4;
 //
 //  A random key in NVS would be lost on any full flash erase — which is exactly
 //  what the web flasher does on a first install. So instead we recompute the
-//  key from the immutable efuse MAC at every boot:
+//  key from the ESP-IDF base MAC at every boot:
 //
 //      writeKey = HMAC-SHA256(WORKSHOP_KEY_SALT, mac)[:32 hex chars]
 //
@@ -50,10 +56,10 @@ static const uint32_t SETTINGS_VERSION = 4;
 //
 //  The salt ships inside a publicly downloadable workshop image, so it is not a
 //  secret. It is not quite a free pass either: the HMAC covers the full 48-bit
-//  MAC, and the public device ID is a one-way hash of it, so the ID alone does
-//  not hand over the derivation input. What defeats that entirely is proximity —
-//  the Wi-Fi station MAC is this same efuse MAC, broadcast in every frame, so
-//  anyone in radio range reads the derivation input directly.
+//  base MAC, and the public device ID is a one-way hash of it, so the ID alone
+//  does not hand over the derivation input. What defeats that entirely is
+//  proximity: the Wi-Fi station MAC is derived from this same base MAC and
+//  broadcast in every frame, so anyone in radio range reads the input directly.
 //
 //  That is an accepted trade-off, not an oversight. The shared workshop API key
 //  sits in the same binary, so the write key was never the secret holding the
@@ -69,9 +75,13 @@ static const uint32_t SETTINGS_VERSION = 4;
 //  where it can actually take effect.
 // ---------------------------------------------------------------------------
 
-static void macToBytes(uint8_t out[6]) {
-  uint64_t mac = ESP.getEfuseMac();   // 48-bit, factory-programmed, immutable
+static void efuseMacToBytes(uint8_t out[6]) {
+  uint64_t mac = ESP.getEfuseMac();   // 48-bit factory/IEEE identity
   for (int i = 0; i < 6; i++) out[i] = (uint8_t)(mac >> (8 * i));
+}
+
+static bool baseMacToBytes(uint8_t out[6]) {
+  return esp_base_mac_addr_get(out) == ESP_OK;
 }
 
 // 32 hex chars (128 bits) of HMAC-SHA256 over the MAC. Truncation is fine here:
@@ -80,7 +90,7 @@ static bool deriveWriteKey(const char *salt, char *out, size_t outLen) {
   if (outLen < 33 || salt == nullptr || salt[0] == '\0') return false;
 
   uint8_t mac[6];
-  macToBytes(mac);
+  if (!baseMacToBytes(mac)) return false;
 
   uint8_t hmac[32];
   const mbedtls_md_info_t *md = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
@@ -104,11 +114,12 @@ static void randomWriteKey(char *out, size_t outLen) {
   }
 }
 
-// Fill deviceId (and deviceName's suffix) from the MAC. Called on every boot,
-// not just on reset, so identity is correct even if NVS holds something stale.
+// Fill deviceId (and deviceName's suffix) from the unique ESP-IDF base MAC.
+// Called on every boot, not just on reset, so identity is correct even if NVS
+// holds something stale.
 //
-// The suffix is the first 32 bits of SHA-256 over the *whole* 48-bit MAC, not
-// the low 32 bits of the MAC itself. Truncating the MAC keeps the Espressif OUI
+// The suffix is the first 32 bits of SHA-256 over the *whole* 48-bit base MAC,
+// not the low 32 bits of the MAC itself. Truncating the MAC keeps the Espressif OUI
 // and one NIC byte, so a workshop's worth of boards — same chip, often the same
 // production batch — share a long common prefix and differ only in the last two
 // hex digits, which is neither recognisable on a badge nor evenly spread. The
@@ -116,19 +127,23 @@ static void randomWriteKey(char *out, size_t outLen) {
 // same ID on every boot, since the MAC is immutable.
 static void deriveIdentity(char *idOut, size_t idLen, char *uidOut, size_t uidLen) {
   uint8_t mac[6];
-  macToBytes(mac);
+  bool baseMacOk = baseMacToBytes(mac);
+  if (!baseMacOk) memset(mac, 0, sizeof(mac));
 
   uint8_t digest[32];
   const mbedtls_md_info_t *md = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
   mbedtls_md_context_t ctx;
   mbedtls_md_init(&ctx);
-  bool ok = mbedtls_md_setup(&ctx, md, /* hmac */ 0) == 0 &&
+  bool ok = baseMacOk && md != nullptr &&
+            mbedtls_md_setup(&ctx, md, /* hmac */ 0) == 0 &&
             mbedtls_md_starts(&ctx) == 0 &&
             // Domain-separate from the write key, which HMACs the same bytes.
             mbedtls_md_update(&ctx, (const uint8_t *)"shs-device-id", 13) == 0 &&
             mbedtls_md_update(&ctx, mac, sizeof(mac)) == 0 &&
             mbedtls_md_finish(&ctx, digest) == 0;
   mbedtls_md_free(&ctx);
+
+  lastIdentityHashOk = ok;
 
   // Fall back to the raw MAC bytes rather than a constant: a hash failure must
   // not give every board the same ID.
@@ -139,13 +154,10 @@ static void deriveIdentity(char *idOut, size_t idLen, char *uidOut, size_t uidLe
   snprintf(idOut, idLen, "%s-%s", DEFAULT_DEVICE_ID_PREFIX, uidOut);
 }
 
-// The derived ID assumes a unique MAC. Boards from some batches ship with a
-// duplicated efuse MAC, and two of those in one room derive the same ID, publish
-// to the same dashboard entry and overwrite each other's readings. The override
-// is the way out on the workshop floor: it is stored, so unlike the derived ID
-// it does not survive a flash erase, and it deliberately does not touch the
-// write key — that stays derived from the MAC, which is what lets the board
-// claim the new ID at all.
+// The derived ID uses the unique ESP-IDF base MAC. Some boards ship with a
+// duplicated eFuse/IEEE MAC; using that value would make two boards derive the
+// same ID and overwrite each other's readings. The override is the way out on
+// the workshop floor: it is stored and does not survive a flash erase.
 //
 // Normalises into `out`: trimmed, lower-cased, [a-z0-9-] only, and prefixed with
 // DEFAULT_DEVICE_ID_PREFIX unless the input already carries it, so a student who
@@ -214,7 +226,61 @@ bool setDeviceIdOverride(const char *raw) {
   return true;
 }
 
-// ---------------------------------------------------------------------------
+static void printIdentityDiagnostics(const char *stage) {
+  uint64_t efuseMac = ESP.getEfuseMac();
+  uint8_t efuseBytes[6];
+  uint8_t baseBytes[6];
+  efuseMacToBytes(efuseBytes);
+  bool baseMacOk = baseMacToBytes(baseBytes);
+
+  char derivedId[sizeof(settings.deviceId)];
+  char uid[9];
+  deriveIdentity(derivedId, sizeof(derivedId), uid, sizeof(uid));
+
+  // Keep these three lines verbatim with the issue report so logs can be
+  // compared directly between colliding boards.
+  Serial.printf("Efuse MAC raw: %012llx\n",
+                (unsigned long long)(efuseMac & 0xFFFFFFFFFFFFULL));
+  Serial.printf("Efuse MAC bytes: %02x:%02x:%02x:%02x:%02x:%02x\n",
+                efuseBytes[0], efuseBytes[1], efuseBytes[2],
+                efuseBytes[3], efuseBytes[4], efuseBytes[5]);
+  if (baseMacOk) {
+    Serial.printf("Base MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
+                  baseBytes[0], baseBytes[1], baseBytes[2],
+                  baseBytes[3], baseBytes[4], baseBytes[5]);
+  } else {
+    Serial.println("Base MAC: <unavailable>");
+  }
+  Serial.printf("Device ID: %s\n", settings.deviceId);
+  Serial.printf("Device name: %s\n", settings.deviceName);
+
+  uint8_t staMac[6];
+  bool staMacOk = esp_read_mac(staMac, ESP_MAC_WIFI_STA) == ESP_OK;
+
+  Serial.printf("Identity[%s]: hash_ok=%d fallback=%s ",
+                stage, lastIdentityHashOk ? 1 : 0,
+                lastIdentityHashOk ? "no" : "raw-mac");
+  Serial.printf("Identity[%s]: efuse_mac=%02x:%02x:%02x:%02x:%02x:%02x ",
+                stage, efuseBytes[5], efuseBytes[4], efuseBytes[3],
+                efuseBytes[2], efuseBytes[1], efuseBytes[0]);
+  if (staMacOk) {
+    Serial.printf("wifi_sta_mac=%02x:%02x:%02x:%02x:%02x:%02x\n",
+                  staMac[0], staMac[1], staMac[2], staMac[3], staMac[4], staMac[5]);
+  } else {
+    Serial.println("wifi_sta_mac=<unavailable>");
+  }
+
+  Serial.printf("Identity[%s]: base_mac=%s derived_id=%s override=%s final_id=%s\n",
+                stage, baseMacOk ? "available" : "unavailable",
+                derivedId,
+                settings.deviceIdOverride[0] ? settings.deviceIdOverride : "<none>",
+                settings.deviceId);
+#if SHS_DERIVED_WRITE_KEY
+  Serial.printf("Identity[%s]: write_key_source=derived salt_present=yes\n", stage);
+#else
+  Serial.printf("Identity[%s]: write_key_source=random-nvs salt_present=no\n", stage);
+#endif
+}
 
 void resetSettingsToDefaults() {
   char uid[9];
@@ -313,6 +379,7 @@ void loadSettings() {
   }
 
   Serial.println("Settings: loaded from NVS");
+  printIdentityDiagnostics("loaded");
 }
 
 void saveSettings() {
@@ -338,6 +405,7 @@ void saveSettings() {
   settingsPrefs.end();
 
   Serial.println("Settings: saved to NVS");
+  printIdentityDiagnostics("saved");
 }
 
 // Forget the saved network only — settings, identity and the IAQ calibration
