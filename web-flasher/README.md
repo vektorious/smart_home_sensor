@@ -176,3 +176,16 @@ git worktree remove /tmp/ghpages
 python3 -m http.server 8000
 # open http://localhost:8000 — localhost counts as secure for Web Serial
 ```
+
+## Setup AP names
+
+The commissioning AP uses a deterministic, friendly name such as
+`SHS-Sparkly-Capybara`. The adjective and noun are selected from the ESP-IDF
+base MAC, so the same board gets the same name after reboot while boards with
+different base MACs normally get different names. The generated name is used
+only for the temporary setup AP; the persisted device name and dashboard name
+are unchanged.
+
+The word lists are original project content and live in
+`code/shs_modular/ap_names.h`. They are compiled into flash and contain no
+external data or runtime dependency.
