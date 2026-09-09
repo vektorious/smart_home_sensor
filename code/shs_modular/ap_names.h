@@ -11,39 +11,40 @@ static constexpr size_t WORD_COUNT = 128;
 
 static const char *const ADJECTIVES[WORD_COUNT] = {
   "Bouncy", "Brave", "Breezy", "Bright", "Bubbly", "Clever", "Cozy", "Cosmic",
-  "Cuddly", "Dapper", "Dizzy", "Dreamy", "Eager", "Fluffy", "Friendly", "Fuzzy",
+  "Cuddly", "Dapper", "Dizzy", "Dreamy", "Eager", "Fluffy", "Kindly", "Fuzzy",
   "Goofy", "Happy", "Hasty", "Jolly", "Jumpy", "Kind", "Lively", "Lucky",
   "Merry", "Mighty", "Misty", "Nifty", "Peppy", "Perky", "Pinky", "Plucky",
   "Puffy", "Quirky", "Rosy", "Rusty", "Sassy", "Shiny", "Silly", "Sleepy",
   "Snappy", "Snug", "Sparkly", "Spiffy", "Spry", "Squishy", "Sunny", "Swift",
   "Tasty", "Tiny", "Toasty", "Tricky", "Twinkly", "Wacky", "Waggly", "Warm",
   "Wiggly", "Witty", "Wobbly", "Woozy", "Zany", "Zippy", "Able", "Amusing",
-  "Bashful", "Beaming", "Blinky", "Blooming", "Breezy", "Bristly", "Bubbly", "Chirpy",
-  "Dandy", "Dewy", "Doting", "Dusky", "Feisty", "Floppy", "Fluttery", "Frosty",
-  "Giggly", "Glimmering", "Huggable", "Jazzy", "Jelly", "Kooky", "Loopy", "Lunar",
+  "Bashful", "Beaming", "Blinky", "Rosy", "Breezy", "Bristly", "Bubbly", "Chirpy",
+  "Dandy", "Dewy", "Doting", "Dusky", "Feisty", "Floppy", "Bouncy", "Frosty",
+  "Giggly", "Sparkly", "Snug", "Jazzy", "Jelly", "Kooky", "Loopy", "Lunar",
   "Mellow", "Mochi", "Muddy", "Mushy", "Noodly", "Peachy", "Pickly", "Pipin",
-  "Plush", "Pompom", "Pudding", "Puzzled", "Quacky", "Rambly", "Round", "Scribbly",
-  "Shy", "Skippy", "Slinky", "Smiley", "Smol", "Snorkely", "Sparky", "Sprouty",
-  "Starry", "Stout", "Stretchy", "Tippy", "Toothy", "Velvety", "Waddly", "Whimsy",
-  "Wiggly", "Windy", "Winky", "Yummy", "Zesty", "Zoomy", "Zucchini", "Zumbly"
+  "Plush", "Pompom", "Pudding", "Puzzled", "Quacky", "Rambly", "Round", "Doodle",
+  "Shy", "Skippy", "Slinky", "Smiley", "Smol", "Breezy", "Sparky", "Sprouty",
+  "Starry", "Stout", "Wiggly", "Tippy", "Toothy", "Velvety", "Waddly", "Whimsy",
+  "Wiggly", "Windy", "Winky", "Yummy", "Zesty", "Zoomy", "Zippy", "Zumbly"
 };
 
 static const char *const NOUNS[WORD_COUNT] = {
-  "Alpaca", "Badger", "Biscuit", "Bumblebee", "Capybara", "Chickpea", "Corgi", "Cricket",
-  "Dumpling", "Ferret", "Fig", "Finch", "Fox", "Frog", "Goose", "Hamster",
-  "Hedgehog", "Koala", "Lemur", "Marmot", "Mochi", "Mongoose", "Mouse", "Muffin",
+  "Alpaca", "Badger", "Biscuit", "Bunny", "Panda", "Bean", "Corgi", "Cricket",
+  "Taco", "Ferret", "Fig", "Finch", "Fox", "Frog", "Goose", "Hamster",
+  "Panda", "Koala", "Lemur", "Marmot", "Mochi", "Badger", "Mouse", "Muffin",
   "Noodle", "Otter", "Pancake", "Penguin", "Pickle", "Pigeon", "Puffin", "Raccoon",
-  "Ravioli", "Robin", "Seagull", "Sloth", "Snail", "Sparrow", "Spud", "Squirrel",
+  "Ravioli", "Robin", "Seagull", "Sloth", "Snail", "Sparrow", "Spud", "Marmot",
   "Taco", "Toad", "Turtle", "Waffle", "Walrus", "Wombat", "Yak", "Zebra",
   "Acorn", "Avocado", "Banana", "Bean", "Berry", "Bloop", "Bunny", "Button",
-  "Cactus", "Carrot", "Cashew", "Cloud", "Coconut", "Cookie", "Cornflake", "Cupcake",
-  "Dandelion", "Donut", "Eclair", "Feather", "Firefly", "Flapjack", "Gizmo", "Grape",
-  "Jellybean", "Kettle", "Kiwi", "Loaf", "Marble", "Marshmallow", "Meerkat", "Moonbean",
-  "Nugget", "Omelet", "Pancake", "Pawpaw", "Peanut", "Pebble", "Pecan", "Popsicle",
-  "Potato", "Pretzel", "Pumpkin", "Quokka", "Radish", "Samosa", "Sausage", "Sprinkle",
-  "Starfish", "Tater", "Teacup", "Tofu", "Tomato", "Turnip", "Wiggle", "WonTon",
-  "Yeti", "Zucchini", "Bumble", "Button", "Doodle", "Fluffball", "Goober", "Hiccup",
-  "Jiggle", "Kibble", "Loopy", "Mittens", "Nibbler", "Pogo", "RolyPoly", "Scooter"
+  "Cactus", "Carrot", "Cashew", "Cloud", "Coconut", "Cookie", "Cookie", "Cupcake",
+  "Daisy", "Donut", "Eclair", "Feather", "Firefly", "Toast", "Gizmo", "Grape",
+  "Jelly", "Kettle", "Kiwi", "Loaf", "Marble", "Muffin", "Meerkat", "Moon",
+  "Nugget", "Omelet", "Pancake", "Pawpaw", "Peanut", "Pebble", "Pecan", "Donut",
+  "Potato", "Pretzel", "Pumpkin", "Quokka", "Radish", "Samosa", "Sausage", "Sprout",
+  "Coral", "Tater", "Teacup", "Tofu", "Tomato", "Turnip", "Wiggle", "WonTon",
+  "Yeti", "Gourd", "Bumble", "Button", "Doodle", "Fuzzy", "Goober", "Hiccup",
+  "Jiggle", "Kibble", "Loopy", "Mittens", "Nibbler", "Pogo", "Rolly", "Scooter",
+  "Boo", "Bunny", "Churro", "Ducky", "Miso", "Puff", "Sprig", "Tippy"
 };
 
 static_assert(sizeof(ADJECTIVES) / sizeof(ADJECTIVES[0]) == WORD_COUNT,
