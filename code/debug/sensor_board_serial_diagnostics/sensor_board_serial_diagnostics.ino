@@ -75,11 +75,6 @@ static bool deriveProductionDeviceId(uint64_t efuseMac, char *out, size_t outLen
 
 static void printResetReason() {
   Serial.printf("reset_reason_cpu0=%d\n", (int)esp_reset_reason());
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || \
-    CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C6 || \
-    CONFIG_IDF_TARGET_ESP32H2
-  Serial.printf("reset_reason_cpu1=%d\n", (int)esp_reset_reason_cpu(1));
-#endif
 }
 
 static void printReport() {
