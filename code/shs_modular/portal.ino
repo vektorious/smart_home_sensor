@@ -23,6 +23,7 @@
 //  for debugging.
 // ============================================================================
 #include "config.h"
+#include "ap_names.h"
 
 #if USE_NETWORK
 #include <WiFiManager.h>   // tzapu
@@ -624,7 +625,11 @@ void runCommissioningPortal() {
   menuHtml = buildMenuHtml();
   wm.setCustomMenuHTML(menuHtml.c_str());
 
-  String apName = String(settings.deviceName) + "-Setup";
+  char generatedApName[33] = {};
+  const bool generatedApNameOk = ApNames::makeName(generatedApName, sizeof(generatedApName));
+  String apName = generatedApNameOk
+                    ? String(generatedApName)
+                    : String(settings.deviceName) + "-Setup";
   Serial.println("Portal: starting AP '" + apName + "'");
   displayPortal(apName.c_str(), settings.deviceId);
   wm.startConfigPortal(apName.c_str());
