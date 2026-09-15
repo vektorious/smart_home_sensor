@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
-"""Render quick_reference.md as one A4 landscape page holding two A5 copies.
+"""Render quick_reference.md as a two-page A5 handout.
 
-Usage: python3 make_pdf.py   (needs chromium on PATH; pdftotext for the fit check)
-Cut the printed sheet down the dashed centre line.
-
-Each copy has to fit one A5 half, and anything past that is clipped without a
-word of complaint. So every render ends with check_fits(), which looks for the
-last line of the markdown in the finished PDF and fails loudly if it is not
-there — the guard that also catches a font substitution changing the metrics on
-a machine without Source Sans 3 installed.
+Usage: python3 make_pdf.py (needs chromium and pdftotext on PATH).
+Building occupies page 1; setup, readings, and air quality occupy page 2.
+The final check verifies that the handout has two pages and its last line fits.
 """
 import re, base64, pathlib, html as H
 
@@ -57,53 +52,43 @@ for line in md.split('\n'):
     else:
         para.append(s)
 flush_para(); flush_table()
-sheet = '\n'.join(out)
+split = next(i for i, block in enumerate(out) if block.startswith('<h2>4. Set up on the device'))
+pages = ['\n'.join(out[:split]), '\n'.join(out[split:])]
 
 CSS = """
-@page { size: A4 landscape; margin: 0; }
+@page { size: A5 portrait; margin: 9mm; }
 * { box-sizing: border-box; }
 body { margin: 0; font-family: "Source Sans 3", "DejaVu Sans", Arial, sans-serif;
-       font-size: 9pt; line-height: 1.32; color: #111; }
-.page { display: flex; width: 297mm; height: 210mm; }
-/* Everything has to land inside one A5 half. overflow:hidden keeps a slight
-   overrun from pushing a second page out of Chromium — but it clips silently,
-   which is how the temperature paragraph went missing from the printed card
-   for a while. check_fits() below is what actually catches that; the spacing
-   here is tuned to leave a few millimetres of slack under the last line. */
-.half { width: 148.5mm; height: 210mm; padding: 9mm 9mm; overflow: hidden; }
-.half.left { border-right: 0.3pt dashed #999; }
+       font-size: 10pt; line-height: 1.35; color: #111; }
+.page + .page { break-before: page; }
 h1 { font-size: 15pt; margin: 0 0 2.4mm; letter-spacing: -0.2px; }
-h2 { font-size: 10.2pt; margin: 3.2mm 0 1.3mm; padding-bottom: 0.5mm;
+h2 { font-size: 10.2pt; margin: 2.4mm 0 1.1mm; padding-bottom: 0.5mm;
      border-bottom: 0.5pt solid #ccc; text-transform: none; }
-p { margin: 0 0 1.8mm; }
-code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.3pt;
+p { margin: 0 0 1.2mm; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 9pt;
        background: #f2f2f2; padding: 0 0.6mm; border-radius: 1px; }
 img { width: 25mm; float: right; margin: 0 0 2mm 3mm; }
-table { border-collapse: collapse; width: 100%; margin: 1mm 0 1.6mm; font-size: 8.5pt; }
+table { border-collapse: collapse; width: 100%; margin: 1mm 0 1.6mm; font-size: 9pt; }
 th, td { border: 0.4pt solid #bbb; padding: 0.9mm 1.4mm; text-align: left; }
 th { background: #f2f2f2; }
 strong { font-weight: 600; }
 """
 
+content = '\n'.join(f'<section class="page">{page}</section>' for page in pages)
 doc = f"""<!doctype html><html><head><meta charset="utf-8"><style>{CSS}</style></head>
-<body><div class="page">
-  <div class="half left">{sheet}</div>
-  <div class="half">{sheet}</div>
-</div></body></html>"""
+<body>{content}</body></html>"""
 (pathlib.Path(__file__).resolve().parent/'quick_reference.html').write_text(doc)
 import subprocess
 here = pathlib.Path(__file__).resolve().parent
 subprocess.run(["chromium", "--headless", "--disable-gpu", "--no-sandbox",
                 "--no-pdf-header-footer",
-                f"--print-to-pdf={here/'quick_reference_2up_a4.pdf'}",
+                f"--print-to-pdf={here/'quick_reference_a5.pdf'}",
                 str(here/"quick_reference.html")], check=True)
 (here/"quick_reference.html").unlink()
 
 
 def check_fits(pdf):
-    """The A5 half clips silently, so confirm the last line of the markdown
-    actually made it onto the page. Needs pdftotext (poppler); skipped with a
-    warning when it is missing."""
+    """Confirm both pages fit and the final paragraph is present."""
     tail = re.sub(r'[*`]', '', ' '.join(md.strip().split('\n')[-2:]))
     needle = ' '.join(tail.split()[-8:])
     try:
@@ -112,17 +97,19 @@ def check_fits(pdf):
     except (FileNotFoundError, subprocess.CalledProcessError):
         print("note: pdftotext not found — could not verify that the page fits")
         return
+    if txt.count('\f') != 2:
+        raise SystemExit("ERROR: expected exactly two A5 pages")
     # Compare on letters and digits only: the styled code spans come back from
     # pdftotext with their padding turned into stray spaces, which would fail a
     # literal match on text that is plainly on the page.
     squash = lambda t: re.sub(r'[^0-9a-z]', '', t.lower())
     if squash(needle) not in squash(txt):
         raise SystemExit(
-            "ERROR: the card overflows its A5 half — the text ending\n"
+            "ERROR: the handout is missing its final text\n"
             f"  \u2026{needle}\n"
-            "was clipped. Shorten quick_reference.md, or tighten the CSS above.")
+            "was not found. Check the layout above.")
     print("fit check: the last line of the markdown is on the page")
 
 
-check_fits(here/'quick_reference_2up_a4.pdf')
-print("wrote quick_reference_2up_a4.pdf")
+check_fits(here/'quick_reference_a5.pdf')
+print("wrote quick_reference_a5.pdf")

@@ -65,7 +65,7 @@ To build from source instead of flashing a prebuilt image:
 | [`instructions/build_instructions.md`](instructions/build_instructions.md) | The standard build: wiring, browser flashing, setup portal, first readings |
 | [`instructions/build_instructions_extended.md`](instructions/build_instructions_extended.md) | Building the firmware from source: Arduino toolchain, BSEC blob, MQTT and Home Assistant |
 | [`instructions/background_information.md`](instructions/background_information.md) | BME680 + BSEC, IAQ / CO₂-equivalent / VOC, self-heating and offset calibration, MQTT vs ESPHome, similar projects |
-| [`instructions/quick_reference/`](instructions/quick_reference/)                   | Printable one-page summary                                                                                        |
+| [`instructions/quick_reference/`](instructions/quick_reference/)                   | Printable two-page A5 summary                                                                                        |
 | [`web-flasher/README.md`](web-flasher/README.md)                                   | Building and publishing the firmware images                                                                       |
 
 ---

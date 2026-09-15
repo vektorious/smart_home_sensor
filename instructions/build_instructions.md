@@ -215,6 +215,8 @@ Press **Finish setup** when the test passes. The portal also closes on its own a
 
 **diy-sensor.org images:** go to `diy-sensor.org/dashboard/device/<your-device-id>`, or find your device name in the project your instructor points you at.
 
+**Missed the QR code or don’t know your device ID?** You can always open [diy-sensor.org/dashboard](https://diy-sensor.org/dashboard) and look for your device by the name you gave it during setup. Select it to open its readings.
+
 **Home Assistant images:** the device appears by itself under *Settings ▸ Devices & Services ▸ MQTT*, with entities for IAQ, IAQ Accuracy, CO₂ equivalent, Breath VOC equivalent, Temperature, Humidity, and Pressure.
 
 Readings are sent every **5 minutes** by default, so the first chart takes a little patience. The display updates every few seconds regardless, which is where to look for an immediate reaction. You can shorten the interval in the setup page, but on a shared workshop key every device's readings come out of the same budget, so leave it unless you have a reason.
@@ -245,7 +247,7 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
 | Never leaves **Setup mode** | Wrong Wi-Fi password, or a 5 GHz-only network. The ESP32-C6 is 2.4 GHz only. |
 | Test says **✗ 403** | The device ID is already claimed with a different write key, which happens if this board previously ran another image. Tell your instructor: the ID needs freeing, or it frees itself 48 h after that device's last reading. |
 | Test says **✗ could not reach…** | The device is on Wi-Fi but has no internet. Captive-portal networks (hotel/campus guest Wi-Fi) will not work. |
-| Nothing on the dashboard | If you pressed **Send a test reading**, your data is already there: check the device ID in the URL character for character. If you did not, the next scheduled reading is up to 5 minutes away. |
+| Nothing on the dashboard | If you pressed **Send a test reading**, your data is already there: open [diy-sensor.org/dashboard](https://diy-sensor.org/dashboard) and look for your device by name, or check the device ID in the direct URL. If you did not, the next scheduled reading is up to 5 minutes away. |
 | **IAQ accuracy fell from 3 back to 1** | Normal. BSEC is rebuilding its baseline after a change in the air, a restart, or air that never varies. It climbs back on its own. |
 | **I need to change a setting** | Press **RESET twice quickly**. The display tells you when the window is open, then setup mode returns. In the current enclosure the button is covered — either take the board out, or power the device up where its saved network is unreachable, which opens setup mode anyway. |
 

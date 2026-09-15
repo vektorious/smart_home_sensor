@@ -9,6 +9,8 @@ Two firmware paths are covered here:
 - **Arduino + MQTT** (§1–3): the full firmware, the colour display UI, and Home Assistant over MQTT.
 - **ESPHome** (§4): no Arduino IDE and no broker, but a minimal display and not verified on hardware.
 
+**Using diy-sensor.org instead of Home Assistant?** If you missed the dashboard QR code or don’t know your device ID, you can always open [diy-sensor.org/dashboard](https://diy-sensor.org/dashboard). Look for the device name you chose during setup and select it to open its readings.
+
 The device is **always on** (USB powered): the live display and the BME680’s multi-day air-quality self-calibration mean it never goes to sleep.
 
 ---

@@ -20,7 +20,7 @@ Swapped SDA/SCL is the most common reason a board reports no sensor.
 
 With the sensor still outside the enclosure, web flasher → select the workshop image → **Connect** → port `USB JTAG/serial debug unit` → **Install**. Needs a USB-C **data** cable. No port listed? Unplug, hold **BOOT**, plug in, release after ~2 s.
 
-After reboot, confirm the display shows live temperature, humidity, and pressure, with no **BME68x err**. Breathe near the BME680 and make sure VOC or CO₂-equivalent reacts. If it fails, power off and re-check 3V3, GND, SDA → GPIO3, and SCL → GPIO2. Do not put the board in the enclosure until this passes.
+After reboot, wait for green **OK** under **BME680 sensor** on the display. If it shows **NOT FOUND**, power off and re-check the wiring. Only assemble the enclosure once the check passes.
 
 ## 3. Assemble the enclosure
 
@@ -38,9 +38,9 @@ the board out, or power up away from the saved Wi-Fi: with no known network it o
 
 ## 5. Your readings
 
-`diy-sensor.org/dashboard/device/<device-id>` — the device ID is on the display and on the
-setup page. It comes from the chip and never changes. New readings arrive every **5 minutes**;
-the display itself refreshes every few seconds.
+**Missed the QR code or don’t know your ID?** You can always go to
+**diy-sensor.org/dashboard**, find the name you gave your device during setup, and select it
+to open its readings. New readings arrive every **5 minutes**; the display refreshes every few seconds.
 
 ## 6. Air quality
 
