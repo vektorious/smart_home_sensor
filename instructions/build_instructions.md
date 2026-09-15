@@ -101,7 +101,7 @@ If you printed the enclosure, assemble it now. It keeps the display visible and 
 
 <div align="center">
 
-<img src="img/board_in_housing_06.jpg" alt="BME680 connected to the Waveshare board, which is resting on the open enclosure" width="700">
+<img src="img/board_in_housing_07.jpg" alt="BME680 connected to the Waveshare board, which is resting on the open enclosure" width="700">
 
 </div>
 
@@ -119,19 +119,19 @@ The two inlays are optional. In any case, put something insulating between the b
 
 <div align="center">
 
-<img src="img/lower_inlay_placed_07.jpg" alt="Lower inlay laid on top of the board, both still standing proud of the housing" width="700">
+<img src="img/lower_inlay_placed_08.jpg" alt="Lower inlay laid on top of the board, both still standing proud of the housing" width="700">
 
 </div>
 
 <div align="center">
 
-<img src="img/lower_inlay_pressed_08.jpg" alt="Board and lower inlay pressed further in, the sensor still hanging outside" width="700">
+<img src="img/lower_inlay_pressed_09.jpg" alt="Board and lower inlay pressed further in, the sensor still hanging outside" width="700">
 
 </div>
 
 <div align="center">
 
-<img src="img/board_seated_top_09.jpg" alt="Top view with board and lower inlay seated at the bottom, sensor still out" width="700">
+<img src="img/board_seated_top_10.jpg" alt="Top view with board and lower inlay seated at the bottom, sensor still out" width="700">
 
 </div>
 
@@ -139,7 +139,7 @@ The two inlays are optional. In any case, put something insulating between the b
 
 <div align="center">
 
-<img src="img/sensor_in_upper_inlay_10.jpg" alt="BME680 seated in the upper inlay, component side towards the lid, wires led out the side" width="700">
+<img src="img/sensor_in_upper_inlay_11.jpg" alt="BME680 seated in the upper inlay, component side towards the lid, wires led out the side" width="700">
 
 </div>
 
@@ -147,7 +147,7 @@ Lay the styrofoam over the back of the sensor. It fills the space between sensor
 
 <div align="center">
 
-<img src="img/foam_in_upper_inlay_11.jpg" alt="Styrofoam laid into the upper inlay behind the sensor as a heat shield" width="700">
+<img src="img/foam_in_upper_inlay_12.jpg" alt="Styrofoam laid into the upper inlay behind the sensor as a heat shield" width="700">
 
 </div>
 
@@ -155,13 +155,13 @@ Now lower the whole upper inlay into the housing, tucking the slack wire in as y
 
 <div align="center">
 
-<img src="img/upper_inlay_into_housing_12.jpg" alt="Upper inlay with sensor and foam going into the main housing" width="700">
+<img src="img/upper_inlay_into_housing_13.jpg" alt="Upper inlay with sensor and foam going into the main housing" width="700">
 
 </div>
 
 <div align="center">
 
-<img src="img/upper_inlay_seated_13.jpg" alt="Upper inlay seated, sensor facing up ready for the lid" width="700">
+<img src="img/upper_inlay_seated_14.jpg" alt="Upper inlay seated, sensor facing up ready for the lid" width="700">
 
 </div>
 
@@ -169,13 +169,13 @@ Now lower the whole upper inlay into the housing, tucking the slack wire in as y
 
 <div align="center">
 
-<img src="img/lid_angled_14.jpeg" alt="Lid held at an angle, its long tab going into the rails in the main body first" width="700">
+<img src="img/lid_angled_15.jpeg" alt="Lid held at an angle, its long tab going into the rails in the main body first" width="700">
 
 </div>
 
 <div align="center">
 
-<img src="img/lid_closed_15.jpeg" alt="Lid closed flush, the BME680 visible through the grille" width="700">
+<img src="img/lid_closed_16.jpeg" alt="Lid closed flush, the BME680 visible through the grille" width="700">
 
 </div>
 
@@ -231,7 +231,7 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
 
 <div align="center">
 
-<img src="img/final_16.jpeg" alt="Finished device showing live sensor readings, IAQ still stabilizing after first boot" width="700">
+<img src="img/final_17.jpeg" alt="Finished device showing live sensor readings, IAQ still stabilizing after first boot" width="700">
 
 </div>
 
