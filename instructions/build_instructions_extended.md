@@ -162,7 +162,7 @@ The BME680's gas sensor needs to **self-calibrate** before IAQ is trustworthy. T
 
 Reaching accuracy 3 the first time can take a few hours of varied air; full calibration uses a 4-day window. The firmware saves the calibrated state to flash and restores it on boot, so it doesn't start from scratch every time. See [`background_information.md`](background_information.md) for what IAQ, CO₂-equivalent, and VOC actually mean.
 
-![Finished device showing live sensor readings — IAQ still stabilizing after first boot](img/final_16.jpeg)
+![Finished device showing live sensor readings — IAQ still stabilizing after first boot](img/final_17.jpeg)
 
 ---
 
@@ -226,4 +226,3 @@ Expect a device at `0x76` (or `0x77`). Nothing found ⇒ a wiring/power problem.
 Your sensor now streams temperature, humidity, pressure, and air-quality data into Home Assistant. Try building an automation — for example, send a phone notification when *CO₂ equivalent* rises above 1000 ppm ("time to open a window"), or chart IAQ over a week to see how cooking and ventilation affect your air.
 
 For background on how the sensors work and why the design choices were made, see [`background_information.md`](background_information.md).
-

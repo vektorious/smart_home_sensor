@@ -51,4 +51,3 @@ the display itself refreshes every few seconds.
 **Temperature** reads high (the board warms the sensor). After 20–30 min, *add* the remaining
 error to the offset in the setup page: `new = current + (reported − real)`. It starts at 5 °C,
 not 0.
-

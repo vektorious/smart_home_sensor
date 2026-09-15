@@ -56,7 +56,9 @@ Double-check 3V3, not 5V before plugging in the USB cable, and check SDA and SCL
 
 Then push the four sockets onto the matching pins on the board. Only the sensor side is soldered, so the sensor-to-board link stays removable and the board can be reused for something else later.
 
-![BME680 connected to the Waveshare board, which is resting on the open enclosure](img/board_in_housing_06.jpg)
+![BME680 connected to the Waveshare board, which is resting on the open enclosure](img/board_in_housing_07.jpg)
+
+![BME680 sensor connected to the board, with the SDA/SCL and VCC/GND connections labelled](img/sensor_board_wiring_06.jpg)
 
 ---
 
@@ -95,31 +97,31 @@ The two inlays are optional. In any case, put something insulating between the b
 
 **Board and lower inlay.** Drop the board into the main housing with the display facing the open front (the bottom), and feed the sensor wires out past it. Lay the lower inlay on top of the board, then press board and inlay down together until they sit at the bottom of the housing. Leave the BME680 itself outside for now.
 
-![Lower inlay laid on top of the board, both still standing proud of the housing](img/lower_inlay_placed_07.jpg)
+![Lower inlay laid on top of the board, both still standing proud of the housing](img/lower_inlay_placed_08.jpg)
 
-![Board and lower inlay pressed further in, the sensor still hanging outside](img/lower_inlay_pressed_08.jpg)
+![Board and lower inlay pressed further in, the sensor still hanging outside](img/lower_inlay_pressed_09.jpg)
 
-![Top view with board and lower inlay seated at the bottom, sensor still out](img/board_seated_top_09.jpg)
+![Top view with board and lower inlay seated at the bottom, sensor still out](img/board_seated_top_10.jpg)
 
 **Sensor and upper inlay.** The BME680 drops into the recess in the upper inlay with its **component side facing up**, towards the lid grille, so the sensor breathes room air instead of the air trapped over the board. The wires leave through the side opening.
 
-![BME680 seated in the upper inlay, component side towards the lid, wires led out the side](img/sensor_in_upper_inlay_10.jpg)
+![BME680 seated in the upper inlay, component side towards the lid, wires led out the side](img/sensor_in_upper_inlay_11.jpg)
 
 Lay the styrofoam over the back of the sensor. It fills the space between sensor and board and blocks the heat rising off the ESP32.
 
-![Styrofoam laid into the upper inlay behind the sensor as a heat shield](img/foam_in_upper_inlay_11.jpg)
+![Styrofoam laid into the upper inlay behind the sensor as a heat shield](img/foam_in_upper_inlay_12.jpg)
 
 Now lower the whole upper inlay into the housing, tucking the slack wire in as you go, and press it down until it sits flush.
 
-![Upper inlay with sensor and foam going into the main housing](img/upper_inlay_into_housing_12.jpg)
+![Upper inlay with sensor and foam going into the main housing](img/upper_inlay_into_housing_13.jpg)
 
-![Upper inlay seated, sensor facing up ready for the lid](img/upper_inlay_seated_13.jpg)
+![Upper inlay seated, sensor facing up ready for the lid](img/upper_inlay_seated_14.jpg)
 
 **Closing the lid.** The lid does not press on from straight above. One edge carries a long tab, the opposite edge a short one, and they go in one after the other. Hold the lid at a slight angle, as in the photo, and slide the long tab into the two rails inside the main body. With that edge held in the rails, lower the other edge until the short tab snaps into its notch and the lid sits flush. To open it again, release the short tab first and then draw the long tab back out of the rails, rather than prying the lid straight up.
 
-![Lid held at an angle, its long tab going into the rails in the main body first](img/lid_angled_14.jpeg)
+![Lid held at an angle, its long tab going into the rails in the main body first](img/lid_angled_15.jpeg)
 
-![Lid closed flush, the BME680 visible through the grille](img/lid_closed_15.jpeg)
+![Lid closed flush, the BME680 visible through the grille](img/lid_closed_16.jpeg)
 
 Once closed, the BME680 sits directly beneath the lid grille, exposed to room air rather than to heat from the board.
 
@@ -171,7 +173,7 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
 - **Compare temperature** against a real thermometer. Yours will read high: the ESP32 and the backlight warm the sensor board. The setup page has a **Temperature offset** field to correct it. It already defaults to 5 °C, so add whatever error is left to that number rather than replacing it. If the display still reads 2.5 °C high, the offset becomes 7.5, not 2.5.
 - **Watch IAQ accuracy.** It starts at 0 and works up to 3. Until it reaches 3, the IAQ number is a placeholder: BSEC is still learning what clean air looks like in your room. Reaching 3 takes hours, and full convergence takes up to four days of running.
 
-![Finished device showing live sensor readings, IAQ still stabilizing after first boot](img/final_16.jpeg)
+![Finished device showing live sensor readings, IAQ still stabilizing after first boot](img/final_17.jpeg)
 
 ---
 
@@ -206,4 +208,3 @@ Three ways on from here:
 - **Build the firmware yourself**: [`build_instructions_extended.md`](build_instructions_extended.md) sets up the Arduino toolchain so you can change the code, the display, or the pins.
 
 For background on how the sensors work and why the design choices were made, see [`background_information.md`](background_information.md).
-
