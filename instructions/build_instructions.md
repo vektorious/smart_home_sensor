@@ -70,12 +70,6 @@ Then push the four sockets onto the matching pins on the board. Only the sensor 
 
 <div align="center">
 
-<img src="img/board_in_housing_06.jpg" alt="BME680 connected to the Waveshare board, which is resting on the open enclosure" width="700">
-
-</div>
-
-<div align="center">
-
 <img src="img/sensor_board_wiring_06.jpg" alt="BME680 sensor connected to the board, with the SDA/SCL and VCC/GND connections labelled" width="700">
 
 </div>
@@ -274,4 +268,3 @@ Three ways on from here:
 - **Build the firmware yourself**: [`build_instructions_extended.md`](build_instructions_extended.md) sets up the Arduino toolchain so you can change the code, the display, or the pins.
 
 For background on how the sensors work and why the design choices were made, see [`background_information.md`](background_information.md).
-
