@@ -2,7 +2,7 @@
 
 This guide covers the Arduino path: setting up the toolchain, building the firmware from source, and connecting the device to **Home Assistant** over MQTT. It is the long way round, and it is what to read if you want to change the code rather than just run it.
 
-**Do the hardware first.** Wiring and enclosure assembly are in [`build_instructions.md`](build_instructions.md) §1–3 and are not repeated here. If all you want is a working sensor, that guide alone is enough: it flashes a prebuilt image from the browser and takes about 90 minutes.
+**Do the hardware first.** Wiring, the pre-enclosure sensor test, and enclosure assembly are in [`build_instructions.md`](build_instructions.md) §1–4 and are not repeated here. If all you want is a working sensor, that guide alone is enough: it flashes a prebuilt image from the browser and takes about 90 minutes.
 
 Two firmware paths are covered here:
 
@@ -226,3 +226,4 @@ Expect a device at `0x76` (or `0x77`). Nothing found ⇒ a wiring/power problem.
 Your sensor now streams temperature, humidity, pressure, and air-quality data into Home Assistant. Try building an automation — for example, send a phone notification when *CO₂ equivalent* rises above 1000 ppm ("time to open a window"), or chart IAQ over a week to see how cooking and ventilation affect your air.
 
 For background on how the sensors work and why the design choices were made, see [`background_information.md`](background_information.md).
+

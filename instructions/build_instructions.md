@@ -60,7 +60,24 @@ Then push the four sockets onto the matching pins on the board. Only the sensor 
 
 ---
 
-## 3. Assemble the enclosure (optional, 10 min)
+## 3. Flash and test the sensor (15 min)
+
+Before putting the board into the enclosure, flash it and verify that the wired BME680 is working. This is much easier to fix while the board and sensor are still accessible.
+
+1. Open the [web flasher](https://alexanderkutschera.com/smart_home_sensor/).
+2. Pick an image. In a workshop, take the one your instructor points you at: it usually carries the event's dashboard settings already, so there is less to fill in later. Otherwise pick **diy-sensor.org** to publish to the public dashboard, or **Home Assistant (MQTT)** if you already run Home Assistant with an MQTT broker.
+3. Plug the board into your laptop with a USB-C data cable.
+4. Click Connect, choose the port named `USB JTAG/serial debug unit`, and click Install. It takes about a minute.
+
+In case nothing appears in the port list: Start the board in flashing mode: unplug it, hold BOOT, plug the cable back in while still holding, release BOOT after ~2 seconds. If it still doesn't appear, your cable is probably charge-only. Try another.
+
+When flashing finishes, let the board boot with the sensor still connected. Check the display for live temperature, humidity, and pressure readings. It must not show **BME68x err**. Briefly breathe near the BME680 and confirm that the VOC or CO₂-equivalent value reacts after a few seconds. A small temperature offset is normal because the board warms the sensor; the important check is that the readings are present and change.
+
+> **Stop here if the sensor is not detected.** Switch off USB power and re-check the wiring: 3V3 (not 5V), GND, SDA → GPIO 3, and SCL → GPIO 2. Reseat the connectors and test again. Do not put the board into the enclosure until this check passes.
+
+---
+
+## 4. Assemble the enclosure (optional, 10 min)
 
 If you printed the enclosure, assemble it now. It keeps the display visible and holds the BME680 above the board, away from the heat the ESP32 and the backlight give off, which would otherwise push the temperature and humidity readings off (see [`background_information.md`](background_information.md)).
 
@@ -112,17 +129,6 @@ Print files and FreeCAD source: [`hardware/3d-print/`](../hardware/3d-print/).
 
 ---
 
-## 4. Flash the firmware (10 min)
-
-1. Open the [web flasher](https://alexanderkutschera.com/smart_home_sensor/).
-2. Pick an image. In a workshop, take the one your instructor points you at: it usually carries the event's dashboard settings already, so there is less to fill in later. Otherwise pick **diy-sensor.org** to publish to the public dashboard, or **Home Assistant (MQTT)** if you already run Home Assistant with an MQTT broker.
-3. Plug the board into your laptop with a USB-C data cable.
-4. Click Connect, choose the port named `USB JTAG/serial debug unit`, and click Install. It takes about a minute.
-
-In case nothing appears in the port list: Start the board in flashing mode: unplug it, hold BOOT, plug the cable back in while still holding, release BOOT after ~2 seconds. If it still doesn't appear, your cable is probably charge-only. Try another.
-
----
-
 ## 5. Set it up (15 min)
 
 When flashing finishes, the board reboots and the display shows **Setup mode** with a Wi-Fi network name and an address.
@@ -169,7 +175,7 @@ The gas sensor is the interesting part, and it needs to warm up. Try these while
 
 ---
 
-## Troubleshooting
+## 8. Troubleshooting
 
 | Symptom | What to check |
 |---|---|
@@ -200,3 +206,4 @@ Three ways on from here:
 - **Build the firmware yourself**: [`build_instructions_extended.md`](build_instructions_extended.md) sets up the Arduino toolchain so you can change the code, the display, or the pins.
 
 For background on how the sensors work and why the design choices were made, see [`background_information.md`](background_information.md).
+

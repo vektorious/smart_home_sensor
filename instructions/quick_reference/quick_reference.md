@@ -16,13 +16,17 @@ Thread the stripped ends through the pad holes **from the plain back**, bend the
 
 Swapped SDA/SCL is the most common reason a board reports no sensor.
 
-## 2. Flash
+## 2. Flash and test before assembly
 
-Web flasher → select the workshop image → **Connect** → port `USB JTAG/serial debug unit` →
-**Install**. Needs a USB-C **data** cable. No port listed? Unplug, hold **BOOT**, plug in,
-release after ~2 s.
+With the sensor still outside the enclosure, web flasher → select the workshop image → **Connect** → port `USB JTAG/serial debug unit` → **Install**. Needs a USB-C **data** cable. No port listed? Unplug, hold **BOOT**, plug in, release after ~2 s.
 
-## 3. Set up on the device
+After reboot, confirm the display shows live temperature, humidity, and pressure, with no **BME68x err**. Breathe near the BME680 and make sure VOC or CO₂-equivalent reacts. If it fails, power off and re-check 3V3, GND, SDA → GPIO3, and SCL → GPIO2. Do not put the board in the enclosure until this passes.
+
+## 3. Assemble the enclosure
+
+If you printed the enclosure, place the board and sensor into it only after the test above passes. Keep the BME680 on the upper side, component side facing the lid grille, and put insulation between the sensor and board before closing the lid.
+
+## 4. Set up on the device
 
 First boot opens the Wi-Fi network **`SHS-xxxxxxxx-Setup`** (no password) → browse to
 **`192.168.4.1`** → **Configure WiFi** (2.4 GHz only) → **Setup**: give the device a name →
@@ -32,13 +36,13 @@ stored) → **Finish**.
 **Back into setup later: press RESET twice quickly.** The enclosure covers that button — slide
 the board out, or power up away from the saved Wi-Fi: with no known network it opens setup itself.
 
-## 4. Your readings
+## 5. Your readings
 
 `diy-sensor.org/dashboard/device/<device-id>` — the device ID is on the display and on the
 setup page. It comes from the chip and never changes. New readings arrive every **5 minutes**;
 the display itself refreshes every few seconds.
 
-## 5. Air quality
+## 6. Air quality
 
 **IAQ accuracy: 0** stabilizing · **1–2** calibrating (hours) · **3** trusted. A drop back to
 1 is normal, BSEC is rebuilding its baseline.
@@ -47,3 +51,4 @@ the display itself refreshes every few seconds.
 **Temperature** reads high (the board warms the sensor). After 20–30 min, *add* the remaining
 error to the offset in the setup page: `new = current + (reported − real)`. It starts at 5 °C,
 not 0.
+
