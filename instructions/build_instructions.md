@@ -87,7 +87,7 @@ Before putting the board into the enclosure, flash it and verify that the wired 
 
 In case nothing appears in the port list: Start the board in flashing mode: unplug it, hold BOOT, plug the cable back in while still holding, release BOOT after ~2 seconds. If it still doesn't appear, your cable is probably charge-only. Try another.
 
-When flashing finishes, let the board boot with the sensor still connected. Check the display for live temperature, humidity, and pressure readings. It must not show **BME68x err**. Briefly breathe near the BME680 and confirm that the VOC or CO₂-equivalent value reacts after a few seconds. A small temperature offset is normal because the board warms the sensor; the important check is that the readings are present and change.
+When flashing finishes, let the board boot with the sensor still connected. On the setup display, wait for the **BME680 sensor** indicator to show green **OK**. It may show **checking...** or **warming up** first. That is all you need to check at this stage; you will look at live readings after setup.
 
 > **Stop here if the sensor is not detected.** Switch off USB power and re-check the wiring: 3V3 (not 5V), GND, SDA → GPIO 3, and SCL → GPIO 2. Reseat the connectors and test again. Do not put the board into the enclosure until this check passes.
 
@@ -189,9 +189,9 @@ Print files and FreeCAD source: [`hardware/3d-print/`](../hardware/3d-print/).
 
 ## 5. Set it up (15 min)
 
-When flashing finishes, the board reboots and the display shows **Setup mode** with a Wi-Fi network name and an address.
+The board is already flashed and the sensor was checked in step 3. After assembling the enclosure, reconnect USB power. The display shows **Setup mode** with a Wi-Fi network name and an address.
 
-1. On your laptop or phone, join the Wi-Fi network named **`SHS-xxxxxxxx-Setup`**. It has no password.
+1. On your laptop or phone, join the Wi-Fi network shown on the display. It has a friendly name such as **`SHS-Bouncy-Alpaca`**. It has no password.
 2. A setup page should open by itself. If not, browse to **`192.168.4.1`**.
 3. Tap **Configure WiFi**, pick the network, enter the password, and save. Every page here is served by the sensor itself, so give it a few seconds — saving takes longer still, because the board reconnects while you wait. Tapping a second time only queues a second request. Each subpage has a **← Back to setup** button at the bottom. It has to be a **2.4 GHz** network: the ESP32-C6 will not see a 5 GHz-only one.
 4. Go back to the setup page and open **Setup** to give your device a **name**. On a shared dashboard this is what everyone else sees, so make it recognisable. Save.
@@ -207,7 +207,7 @@ Press **Finish setup** when the test passes. The portal also closes on its own a
 
 > **To change a setting later**, press **RESET twice in quick succession**. The display tells you when the window is open, then setup mode returns. This is how you move the device to another network, correct the temperature offset, or point it somewhere else, without reflashing.
 
-> ⚠️ **The current enclosure covers the RESET button.** Until a revised case opens it up, reaching it means sliding the board out of the housing. The way in that needs no button: the device opens setup mode by itself at power-up whenever it cannot reach a Wi-Fi network it already knows. Power it up out of range of the saved network — or with that network switched off — and the `SHS-xxxxxxxx-Setup` network appears on its own. (A network that drops *while* the device is running does not reopen setup; it reconnects in the background instead.)
+> ⚠️ **The current enclosure covers the RESET button.** Until a revised case opens it up, reaching it means sliding the board out of the housing. The way in that needs no button: the device opens setup mode by itself at power-up whenever it cannot reach a Wi-Fi network it already knows. Power it up out of range of the saved network — or with that network switched off — and the setup Wi-Fi network appears on its own; join the friendly name shown on the display. (A network that drops *while* the device is running does not reopen setup; it reconnects in the background instead.)
 
 ---
 

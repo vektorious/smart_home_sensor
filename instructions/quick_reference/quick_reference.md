@@ -28,7 +28,7 @@ If you printed the enclosure, place the board and sensor into it only after the 
 
 ## 4. Set up on the device
 
-First boot opens the Wi-Fi network **`SHS-xxxxxxxx-Setup`** (no password) → browse to
+First boot opens a Wi-Fi network with a friendly name such as **`SHS-Bouncy-Alpaca`** (no password). Use the exact name shown on the display → browse to
 **`192.168.4.1`** → **Configure WiFi** (2.4 GHz only) → **Setup**: give the device a name →
 *Live readings & connection test* → **Send a test reading** (green **✓ 201** or **200** =
 stored) → **Finish**.

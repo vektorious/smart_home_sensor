@@ -92,7 +92,7 @@ The other values in `config.h` are the pin map and the *factory defaults* — wh
 
 On first boot — and whenever it cannot reach a saved network — the device opens a setup portal. The display shows you what to join and where to go.
 
-1. The device starts an access point named **`SHS-xxxxxxxx-Setup`** (no password), where `xxxxxxxx` is derived from the chip, so every board's is different.
+1. The device starts an access point with a friendly name such as **`SHS-Bouncy-Alpaca`** (no password). Join the exact network name shown on its display.
 2. Join it from a phone or laptop. The setup page usually opens by itself; if not, browse to **`192.168.4.1`**.
 3. **Configure WiFi** — pick your network and enter the password.
 4. **Setup** — enter your device name and the MQTT settings from §3:
