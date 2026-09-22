@@ -14,7 +14,7 @@ import re, base64, pathlib, html as H
 PAGE_BREAK_BEFORE = None                        # heading to force onto page 2, or None to flow
 TWO_COLUMN = {'3', '6', '7'}                    # section numbers set in two columns
 COLS_WITH_TIP = set()                                # …and pull their callout into the columns
-WIRING_WIDTH = '64%'                            # shrink to win a line on page 1
+WIRING_WIDTH = '76%'                            # shrink to win a line on page 1
 
 root = pathlib.Path(__file__).resolve().parents[2]
 md = (root/'instructions/quick_reference/quick_reference.md').read_text()
@@ -123,7 +123,7 @@ CSS = """
 :root { --ink: #14181c; --muted: #4d5a66; --accent: #0e6473; --tint: #e8f1f3;
         --rule: #d6dde1; }
 body { margin: 0; font-family: "Source Sans 3", "DejaVu Sans", Arial, sans-serif;
-       font-size: 8.9pt; line-height: 1.29; color: var(--ink);
+       font-size: 9.4pt; line-height: 1.3; color: var(--ink);
        -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .page + .page { break-before: page; }
 

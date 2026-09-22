@@ -26,13 +26,13 @@ Thread the stripped ends through the pad holes **from the plain back**, bend the
 ## 3. Assemble the enclosure
 
 - **Main housing** (bottom)
-- **Board**: display facing the open front
-- **Lower inlay**: between board and sensor
-- **Upper inlay**: BME680 in the recess, **component side up** towards the lid grille, wires out through the side opening
+- **Board**: display to the open front
+- **Lower inlay**: fixes board
+- **Upper inlay**: BME680 in the recess, **component side up** towards the lid grille
 - **Lid** (top)
-- **Insulation** (optional) between board and sensor e.g. the board's styrofoam does the job
+- **Insulation** between board and sensor, e.g. the board's styrofoam
 
-> **The lid goes on at an angle**, not straight down: slide its **long tab** into the rails, then lower the other edge until the **short tab** snaps in. Release the short tab first to open. The closed lid covers **RESET** — see step 4.
+> **The lid goes on at an angle**, not straight down: slide its **long tab** into the rails, then lower the other edge until the **short tab** snaps in.
 
 ## 4. Set up on the device
 
