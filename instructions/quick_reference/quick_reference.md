@@ -10,9 +10,7 @@
 
 Thread the stripped ends through the pad holes **from the plain back**, bend them flat against the labelled front and solder there — the wires must leave the module **sideways**, in the plane of the board.
 
-| BME680 | VCC | GND | SDA | SCL |
-|---|---|---|---|---|
-| **Board** | **3V3** (not 5 V) | GND | **GPIO3** | **GPIO2** |
+<img src="wiring.svg" class="wiring" alt="Six-pin microcontroller connector to BME680: 3V3 to VCC, GND to GND, GPIO3 to SDA, GPIO2 to SCL. Leave 5V and GPIO1 unused." width="760">
 
 Swapped SDA/SCL is the most common reason a board reports no sensor.
 

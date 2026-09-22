@@ -10,6 +10,7 @@ import re, base64, pathlib, html as H
 root = pathlib.Path(__file__).resolve().parents[2]
 md = (root/'instructions/quick_reference/quick_reference.md').read_text()
 qr = base64.b64encode((root/'instructions/build_instructions_qr.png').read_bytes()).decode()
+wiring = base64.b64encode((root/'instructions/quick_reference/wiring.svg').read_bytes()).decode()
 
 def inline(t):
     t = H.escape(t)
@@ -36,7 +37,8 @@ for line in md.split('\n'):
     s = line.strip()
     if s.startswith('<img'):
         flush_para(); flush_table()
-        out.append(s.replace('src="../build_instructions_qr.png"', f'src="data:image/png;base64,{qr}"'))
+        out.append(s.replace('src="../build_instructions_qr.png"', f'src="data:image/png;base64,{qr}"')
+                    .replace('src="wiring.svg"', f'src="data:image/svg+xml;base64,{wiring}"'))
     elif s.startswith('|'):
         flush_para()
         cells = [c for c in s.strip('|').split('|')]
@@ -68,6 +70,7 @@ p { margin: 0 0 1.2mm; }
 code { font-family: "DejaVu Sans Mono", monospace; font-size: 9pt;
        background: #f2f2f2; padding: 0 0.6mm; border-radius: 1px; }
 img { width: 25mm; float: right; margin: 0 0 2mm 3mm; }
+img.wiring { display: block; width: 100%; float: none; margin: 1mm 0; }
 table { border-collapse: collapse; width: 100%; margin: 1mm 0 1.6mm; font-size: 9pt; }
 th, td { border: 0.4pt solid #bbb; padding: 0.9mm 1.4mm; text-align: left; }
 th { background: #f2f2f2; }
