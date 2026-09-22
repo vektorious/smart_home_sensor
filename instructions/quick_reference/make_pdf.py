@@ -144,7 +144,12 @@ li::marker { color: var(--accent); font-weight: 700; }
 
 .tip { break-inside: avoid; background: var(--tint); border-left: 1.2pt solid var(--accent);
        padding: 1.2mm 2mm; margin: 0 0 1.5mm; border-radius: 0 1mm 1mm 0; }
-.cols { column-count: 2; column-gap: 5mm; column-rule: 0.4pt solid var(--rule); }
+/* The divider is painted rather than set as a column-rule: a column-rule runs
+   the full height of the block, so it collides with whatever follows. This one
+   is inset top and bottom and stops short of the next block. */
+.cols { column-count: 2; column-gap: 5mm; margin-bottom: 1.8mm;
+        background: linear-gradient(var(--rule), var(--rule)) no-repeat center;
+        background-size: 0.4pt calc(100% - 5mm); }
 .cols ul, .cols ol { margin-bottom: 0; }
 
 code { overflow-wrap: anywhere; font-family: "DejaVu Sans Mono", monospace; font-size: 8.8pt;
