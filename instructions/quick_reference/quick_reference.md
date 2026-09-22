@@ -42,7 +42,7 @@ Thread the stripped ends through the pad holes **from the plain back**, bend the
 4. *Live readings & connection test* → **Send a test reading**. Green **✓ 201** or **200** means stored.
 5. **Finish.**
 
-> **Back into setup later: press RESET twice quickly.** The enclosure covers that button — slide the board out, or power up away from the saved Wi-Fi: with no known network it opens setup itself.
+> **Back into setup later: press RESET twice quickly.** The current enclosure covers that button → slide the board out, or power up away from the saved Wi-Fi: with no known network it opens setup itself.
 
 ## 5. Your readings
 
@@ -57,7 +57,7 @@ The QR code on the display links straight to your readings. Missed it, or don't 
 - **101–150** light · **151–200** moderate
 - **201–300** heavy · **300+** severe pollution
 
-> **Temperature reads high** — the board warms the sensor. After 20–30 min, *add* the remaining error to the offset in the setup page: `new = current + (reported − real)`. It starts at 5 °C, not 0.
+> **Temperature reads high**: the board warms the sensor. After 20–30 min, *add* the remaining error to the offset in the setup page: `new = current + (reported − real)`. It starts at 5 °C, not 0.
 
 ## 7. Troubleshooting
 

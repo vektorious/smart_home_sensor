@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Render quick_reference.md as a two-page A5 handout.
 
+Also writes quick_reference_a5_2up.pdf, the same handout with its pages
+duplicated (1,1,2,2) for printing two copies per A4 sheet.
+
 Usage: python3 make_pdf.py (needs chromium and pdftotext on PATH).
 Building occupies page 1; setup, readings, air quality and troubleshooting page 2.
 The final check verifies that the handout has two pages and its last line fits.
@@ -10,6 +13,10 @@ tables and inline <img>. Sections listed in TWO_COLUMN set their lists in two
 columns; callouts always stay full width.
 """
 import re, base64, pathlib, html as H
+
+FOOTER = ('github.com/vektorious/smart_home_sensor · CC BY 4.0 · '
+          'Alexander Kutschera 2026')
+PAGE_SPAN = '383mm'      # two A5 pages minus the margins; pins the footer down
 
 PAGE_BREAK_BEFORE = None                        # heading to force onto page 2, or None to flow
 TWO_COLUMN = {'3', '6', '7'}                    # section numbers set in two columns
@@ -122,7 +129,8 @@ CSS = """
 * { box-sizing: border-box; }
 :root { --ink: #14181c; --muted: #4d5a66; --accent: #0e6473; --tint: #e8f1f3;
         --rule: #d6dde1; }
-body { margin: 0; font-family: "Source Sans 3", "DejaVu Sans", Arial, sans-serif;
+body { margin: 0; display: flex; flex-direction: column; min-height: SPAN;
+       font-family: "Source Sans 3", "DejaVu Sans", Arial, sans-serif;
        font-size: 9.4pt; line-height: 1.3; color: var(--ink);
        -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .page + .page { break-before: page; }
@@ -160,7 +168,11 @@ table { border-collapse: collapse; width: 100%; margin: 1mm 0 1.6mm; font-size: 
 th, td { border: 0.4pt solid var(--rule); padding: 0.9mm 1.4mm; text-align: left; }
 th { background: var(--tint); }
 strong { font-weight: 600; }
-""".replace('WIRING', WIRING_WIDTH)
+
+.foot { margin: 4mm 0 0; margin-top: auto; padding-top: 1.6mm;
+        border-top: 0.4pt solid var(--rule); text-align: center;
+        font-size: 7.6pt; color: var(--muted); }
+""".replace('WIRING', WIRING_WIDTH).replace('SPAN', PAGE_SPAN)
 
 # The title, intro and QR code form one masthead above the accent rule.
 pages[0] = re.sub(r'(<h1>.*?)(<h2)', r'<div class="kicker">\1</div>\2', pages[0],
@@ -168,6 +180,7 @@ pages[0] = re.sub(r'(<h1>.*?)(<h2)', r'<div class="kicker">\1</div>\2', pages[0]
 pages[0] = pages[0].replace('<p>You build', '<p class="lede">You build')
 
 content = '\n'.join(f'<section class="page">{page}</section>' for page in pages)
+content += f'<p class="foot">{H.escape(FOOTER)}</p>'
 doc = f"""<!doctype html><html><head><meta charset="utf-8"><style>{CSS}</style></head>
 <body>{content}</body></html>"""
 here = pathlib.Path(__file__).resolve().parent
@@ -206,3 +219,22 @@ def check_fits(pdf):
 
 check_fits(here/'quick_reference_a5.pdf')
 print("wrote quick_reference_a5.pdf")
+
+
+def write_duplex_copy(pdf, out):
+    """Duplicate the pages as 1,1,2,2 for printing two copies per A4 sheet.
+
+    Printed two-up and double-sided, each A4 sheet then carries two complete
+    handouts side by side: fronts on one side, backs on the other, so the sheet
+    can be cut down the middle.
+    """
+    try:
+        subprocess.run(["qpdf", str(pdf), "--pages", str(pdf), "1,1,2,2", "--",
+                        str(out)], check=True)
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        print("note: qpdf not found — skipped the two-per-sheet print file")
+        return
+    print(f"wrote {out.name} (print 2 pages per sheet, double-sided, then cut)")
+
+
+write_duplex_copy(here/'quick_reference_a5.pdf', here/'quick_reference_a5_2up.pdf')
