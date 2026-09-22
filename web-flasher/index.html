@@ -71,7 +71,16 @@
   <div class="card">
     <div class="picker">
       <label class="pick">
-        <input type="radio" name="fw" value="manifest-sensorboard.json" checked>
+        <input type="radio" name="fw" value="manifest-workshop.json" checked>
+        <span>
+          <span class="t">HPI Makeruniverse Welcome Workshop <span class="tag">workshop</span></span><br>
+          <span class="d">For the workshop on 23–24 September 2026. Connect your board to Wi-Fi
+          and name it in the setup portal to publish to the
+          <a href="https://diy-sensor.org/dashboard/project/hpi-makeruniverse-welcome-workshop">shared workshop dashboard</a>.</span>
+        </span>
+      </label>
+      <label class="pick">
+        <input type="radio" name="fw" value="manifest-sensorboard.json">
         <span>
           <span class="t">diy-sensor.org</span><br>
           <span class="d">The standard build. Your device claims its own ID and keeps its
@@ -98,9 +107,10 @@
     </div>
 
     <div class="expiry">
-      <strong>The European Impact Sprint image has been withdrawn.</strong> The sprint is
-      over and its image is no longer installable from this page. Boards already running it
-      are unaffected and keep publishing.
+      <strong>The HPI Makeruniverse Welcome Workshop image will be withdrawn on
+      1 October 2026.</strong> After that date, it will no longer be available to install
+      from this page. Boards already running it can keep publishing while the workshop
+      API key remains active.
       Readings last as long as the device keeps sending them: once a device stops, it and
       its history are removed from the dashboard 48&nbsp;hours later.
       <br><br>
@@ -109,14 +119,14 @@
       <br><br>
       To keep the <em>same</em> device ID, copy the <strong>write key</strong> from your
       setup page <em>before</em> re-flashing, then paste it into the new firmware's
-      <strong>Write key</strong> field. The sprint image was the only one that could
+      <strong>Write key</strong> field. The workshop image is the only one that can
       recreate that key, so once the board is re-flashed it is gone: without it the device
       ID stays claimed by the old key and the dashboard will reject the readings until
       that device expires.
     </div>
 
     <div class="install">
-      <esp-web-install-button id="installer" manifest="manifest-sensorboard.json">
+      <esp-web-install-button id="installer" manifest="manifest-workshop.json">
         <span slot="unsupported">
           Your browser doesn’t support Web Serial. Use <strong>Chromium</strong>,
           a recent <strong>Firefox</strong>, <strong>Chrome</strong>, <strong>Edge</strong>, or

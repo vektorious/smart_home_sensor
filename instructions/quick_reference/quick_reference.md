@@ -10,21 +10,23 @@
 
 Thread the stripped ends through the pad holes **from the plain back**, bend them flat against the labelled front and solder there — the wires must leave the module **sideways**, in the plane of the board.
 
-| BME680 | VCC | GND | SDA | SCL |
-|---|---|---|---|---|
-| **Board** | **3V3** (not 5 V) | GND | **GPIO3** | **GPIO2** |
+<img src="wiring.svg" class="wiring" alt="Six-pin microcontroller connector to BME680: 3V3 to VCC, GND to GND, GPIO3 to SDA, GPIO2 to SCL. Leave 5V and GPIO1 unused." width="760">
 
 Swapped SDA/SCL is the most common reason a board reports no sensor.
 
-## 2. Flash
+## 2. Flash and test before assembly
 
-Web flasher → select the workshop image → **Connect** → port `USB JTAG/serial debug unit` →
-**Install**. Needs a USB-C **data** cable. No port listed? Unplug, hold **BOOT**, plug in,
-release after ~2 s.
+With the sensor still outside the enclosure, web flasher → select the workshop image → **Connect** → port `USB JTAG/serial debug unit` → **Install**. Needs a USB-C **data** cable. No port listed? Unplug, hold **BOOT**, plug in, release after ~2 s.
 
-## 3. Set up on the device
+After reboot, wait for green **OK** under **BME680 sensor** on the display. If it shows **NOT FOUND**, power off and re-check the wiring. Only assemble the enclosure once the check passes.
 
-First boot opens the Wi-Fi network **`SHS-xxxxxxxx-Setup`** (no password) → browse to
+## 3. Assemble the enclosure
+
+If you printed the enclosure, place the board and sensor into it only after the test above passes. Keep the BME680 on the upper side, component side facing the lid grille, and put insulation between the sensor and board before closing the lid.
+
+## 4. Set up on the device
+
+First boot opens a Wi-Fi network with a friendly name such as **`SHS-Bouncy-Alpaca`** (no password). Use the exact name shown on the display → browse to
 **`192.168.4.1`** → **Configure WiFi** (2.4 GHz only) → **Setup**: give the device a name →
 *Live readings & connection test* → **Send a test reading** (green **✓ 201** or **200** =
 stored) → **Finish**.
@@ -32,13 +34,13 @@ stored) → **Finish**.
 **Back into setup later: press RESET twice quickly.** The enclosure covers that button — slide
 the board out, or power up away from the saved Wi-Fi: with no known network it opens setup itself.
 
-## 4. Your readings
+## 5. Your readings
 
-`diy-sensor.org/dashboard/device/<device-id>` — the device ID is on the display and on the
-setup page. It comes from the chip and never changes. New readings arrive every **5 minutes**;
-the display itself refreshes every few seconds.
+**Missed the QR code or don’t know your ID?** You can always go to
+**diy-sensor.org/dashboard**, find the name you gave your device during setup, and select it
+to open its readings. New readings arrive every **5 minutes**; the display refreshes every few seconds.
 
-## 5. Air quality
+## 6. Air quality
 
 **IAQ accuracy: 0** stabilizing · **1–2** calibrating (hours) · **3** trusted. A drop back to
 1 is normal, BSEC is rebuilding its baseline.

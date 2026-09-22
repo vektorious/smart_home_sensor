@@ -9,7 +9,7 @@ Arduino IDE and no drivers.
 | File | Purpose |
 |------|---------|
 | `index.html` | The flasher page: firmware picker + install button |
-| `manifest-workshop.json` | European Impact Sprint — keyed, time-limited |
+| `manifest-workshop.json` | HPI Makeruniverse Welcome Workshop — keyed, time-limited |
 | `manifest-sensorboard.json` | diy-sensor.org, keyless — the standard build |
 | `manifest-ha.json` | Home Assistant over MQTT |
 | `manifest-display.json` | Display only, no networking |
@@ -79,6 +79,11 @@ offered the update.
    `workshop_secrets.h` aside.
 
 ## Workshop image
+
+The HPI Makeruniverse Welcome Workshop runs on **23–24 September 2026**.
+Its dashboard project is `hpi-makeruniverse-welcome-workshop`, and its image
+is scheduled for withdrawal on **1 October 2026**. Withdrawal is a manual
+publication step; the date shown on the page does not remove the image automatically.
 
 Built against the gitignored `code/shs_modular/workshop_secrets.h` (see
 `workshop_secrets.example.h`), which bakes in an API key, the dashboard project, and
