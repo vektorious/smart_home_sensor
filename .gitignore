@@ -28,3 +28,6 @@ cleanup_smoketest-*.sh
 
 # Personal notes, kept out of the repo
 TODO.md
+
+# Local agent instructions
+/AGENTS.md
